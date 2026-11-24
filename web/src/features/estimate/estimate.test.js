@@ -14,12 +14,13 @@ describe('estimateChapter matches every chapter in mock.json', () => {
 });
 
 describe('the formula', () => {
-  const metrics = { pages: 37, density: 'low', equations: 12, exercises: 5 }; // base = 2.81
+  // base = 37×0.0375 + 0 + 12×0.03 + 5×0.12 = 2.3475
+  const metrics = { pages: 37, density: 'low', equations: 12, exercises: 5 };
 
   it('applies the level multiplier: strong ×0.75, mid ×1, weak ×1.4', () => {
-    expect(estimateChapter(metrics, 'strong')).toMatchObject({ loHours: 2, hiHours: 3 }); // 2.1075 -> 2
-    expect(estimateChapter(metrics, 'mid')).toMatchObject({ loHours: 3, hiHours: 4 }); // 2.81 -> 3
-    expect(estimateChapter(metrics, 'weak')).toMatchObject({ loHours: 4, hiHours: 5.5 }); // 3.934 -> 4
+    expect(estimateChapter(metrics, 'strong')).toMatchObject({ loHours: 2, hiHours: 3 }); // 1.76 -> 2
+    expect(estimateChapter(metrics, 'mid')).toMatchObject({ loHours: 2.5, hiHours: 3.5 }); // 2.35 -> 2.5
+    expect(estimateChapter(metrics, 'weak')).toMatchObject({ loHours: 3.5, hiHours: 5 }); // 3.29 -> 3.5
   });
 
   it('never goes below half an hour', () => {

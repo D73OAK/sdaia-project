@@ -24,8 +24,8 @@
             "exercises": 5
           },
           "estimate": {
-            "loHours": 4.0,
-            "hiHours": 5.5,
+            "loHours": 3.5,
+            "hiHours": 5.0,
             "reason": "٣٧ صفحة · كثافة النص خفيفة · ١٢ معادلة · ٥ تمرين · مستواك فيها: ضعيف"
           }
         },
@@ -43,8 +43,8 @@
             "exercises": 6
           },
           "estimate": {
-            "loHours": 5.5,
-            "hiHours": 7.5,
+            "loHours": 4.5,
+            "hiHours": 6.5,
             "reason": "٤٢ صفحة · كثافة النص متوسطة · ٢١ معادلة · ٦ تمرين · مستواك فيها: ضعيف"
           }
         },
@@ -62,8 +62,8 @@
             "exercises": 4
           },
           "estimate": {
-            "loHours": 4.0,
-            "hiHours": 5.5,
+            "loHours": 3.5,
+            "hiHours": 5.0,
             "reason": "٣١ صفحة · كثافة النص متوسطة · ١٨ معادلة · ٤ تمرين · مستواك فيها: ضعيف"
           }
         },
@@ -110,8 +110,8 @@
             "exercises": 3
           },
           "estimate": {
-            "loHours": 3.0,
-            "hiHours": 4.0,
+            "loHours": 2.5,
+            "hiHours": 3.5,
             "reason": "٢٨ صفحة · كثافة النص عالية · ٩ معادلة · ٣ تمرين · مستواك فيها: متوسط"
           }
         },
@@ -129,8 +129,8 @@
             "exercises": 4
           },
           "estimate": {
-            "loHours": 3.0,
-            "hiHours": 4.0,
+            "loHours": 2.5,
+            "hiHours": 3.5,
             "reason": "٣٣ صفحة · كثافة النص متوسطة · ١٤ معادلة · ٤ تمرين · مستواك فيها: متوسط"
           }
         }
@@ -158,8 +158,8 @@
             "exercises": 7
           },
           "estimate": {
-            "loHours": 2.5,
-            "hiHours": 3.5,
+            "loHours": 2.0,
+            "hiHours": 3.0,
             "reason": "٤٦ صفحة · كثافة النص خفيفة · ٢ معادلة · ٧ تمرين · مستواك فيها: قوي"
           }
         },
@@ -177,8 +177,8 @@
             "exercises": 6
           },
           "estimate": {
-            "loHours": 2.0,
-            "hiHours": 3.0,
+            "loHours": 1.5,
+            "hiHours": 2.0,
             "reason": "٣٩ صفحة · كثافة النص خفيفة · ٠ معادلة · ٦ تمرين · مستواك فيها: قوي"
           }
         },
@@ -196,8 +196,8 @@
             "exercises": 9
           },
           "estimate": {
-            "loHours": 3.0,
-            "hiHours": 4.0,
+            "loHours": 2.5,
+            "hiHours": 3.5,
             "reason": "٥١ صفحة · كثافة النص متوسطة · ٤ معادلة · ٩ تمرين · مستواك فيها: قوي"
           }
         }
@@ -244,8 +244,8 @@
             "exercises": 6
           },
           "estimate": {
-            "loHours": 3.5,
-            "hiHours": 5.0,
+            "loHours": 3.0,
+            "hiHours": 4.0,
             "reason": "٣٤ صفحة · كثافة النص متوسطة · ٢٦ معادلة · ٦ تمرين · مستواك فيها: متوسط"
           }
         }

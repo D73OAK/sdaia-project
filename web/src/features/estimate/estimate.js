@@ -2,7 +2,7 @@
 // Pure functions only (no React, no PDF reading), so they can be tested and moved to a server unchanged.
 //
 // Formula (HANDOFF.md §7 rule 5):
-//   base = pages×0.05 + {low:0, mid:0.4, high:0.8}[density] + equations×0.03 + exercises×0.12
+//   base = pages×0.0375 + {low:0, mid:0.4, high:0.8}[density] + equations×0.03 + exercises×0.12
 //   lo   = max(0.5, round½(base × level))
 //   hi   = round½(lo × 1.4)
 // The weights are placeholders, to calibrate later against real study time. Change them ONLY here.
@@ -10,7 +10,7 @@ import { fmtNumber } from '../../lib/format.js';
 import { reasonText } from '../../lib/strings.js';
 
 export const ESTIMATE_CONFIG = {
-  hoursPerPage: 0.05,
+  hoursPerPage: 0.0375, // calibrated 2026-11-24 from real study time on 3 chapters (was 0.05)
   densityHours: { low: 0, mid: 0.4, high: 0.8 },
   hoursPerEquation: 0.03,
   hoursPerExercise: 0.12,

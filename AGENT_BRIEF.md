@@ -26,7 +26,7 @@ For each chapter PDF, extract:
 
 Starting formula, in hours (weights are placeholders to calibrate later; keep them in one config object):
 ```
-base = pages*0.05 + {low:0, mid:0.4, high:0.8}[density] + equations*0.03 + exercises*0.12
+base = pages*0.0375 + {low:0, mid:0.4, high:0.8}[density] + equations*0.03 + exercises*0.12
 lo   = max(0.5, round_to_half(base * levelMultiplier))
 hi   = round_to_half(lo * 1.4)
 ```

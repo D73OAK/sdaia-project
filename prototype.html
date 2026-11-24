@@ -61,6 +61,7 @@ input.bad{border-color:var(--warn)}
 .chip button{border:0;background:none;cursor:pointer;font:inherit;color:var(--ink);opacity:.6}
 .chip.bad{background:#F4D5D2;flex-direction:column;align-items:flex-start;padding:8px 12px}
 .chip.bad .acts{display:flex;gap:8px}
+.lab .opt{font-weight:500}
 .chip.bad .acts button{opacity:1;background:#fff;border-radius:10px;padding:2px 10px;font-weight:700;font-size:13px}
 .pills{display:flex;gap:10px;flex-wrap:wrap}
 .pill{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:var(--r);padding:8px 22px;background:#ffffff80;color:var(--ink);cursor:pointer;min-height:44px}
@@ -202,6 +203,10 @@ input[type=text],input[type=date],input[type=number],input[type=time]{font-size:
       <div><label class="drop" for="cFiles"><svg class="ico" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V3M5 8l5-5 5 5M3 17h14"/></svg> ارفع ملفات PDF (كل ملف = شابتر)</label><input type="file" id="cFiles" accept="application/pdf,.pdf" multiple hidden>
       <div class="files" id="fileList"></div></div>
       <span class="err" id="eFiles">ما رفعت ولا شابتر. ارفع ملف PDF واحد على الأقل.</span></div>
+    <div class="field"><span class="lab">ملفات التمارين: <span class="opt">(اختياري)</span></span>
+      <div><label class="drop" for="cEx"><svg class="ico" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V3M5 8l5-5 5 5M3 17h14"/></svg> ارفع ملفات PDF للتمارين</label><input type="file" id="cEx" accept="application/pdf,.pdf" multiple hidden>
+      <div class="files" id="exList"></div></div>
+      <span class="err" id="eEx">فيه ملف ما نقدر نقراه. أعد رفعه أو احذفه، وبعدها احفظ.</span></div>
     <div class="field"><span class="lab">مستواك فيها:</span>
       <div class="pills" id="lvl"><button class="pill" data-v="strong">قوي</button><button class="pill" data-v="mid">متوسط</button><button class="pill" data-v="weak">ضعيف</button></div>
       <span class="err" id="eLvl">ما اخترت مستواك. اختر واحد عشان نضبط الساعات على قدّك.</span></div>
@@ -304,33 +309,40 @@ const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.togg
 
 /* pseudo metrics from a file (prototype only) */
 const hash=s=>{let h=7;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h};
-function analyse(f){const h=hash(f.name+f.size);
+function analyse(f,kind){const h=hash(f.name+f.size);
   const pages=Math.max(8,Math.min(48,Math.round(f.size/60000)||8+h%30));
-  const dens=['خفيفة','متوسطة','عالية'][h%3],eq=(h>>>3)%30,ex=f.name.match(/تمار|ex|hw|sheet/i)?8+(h>>>5)%12:(h>>>5)%8;
-  const base=pages*.05+[0,.4,.8][h%3]+eq*.03+ex*.12;return{pages,dens,eq,ex,base}}
+  const dens=['خفيفة','متوسطة','عالية'][h%3],eq=(h>>>3)%30,ex=kind==='exercises'?8+(h>>>5)%12:(h>>>5)%8;
+  const base=pages*.0375+[0,.4,.8][h%3]+eq*.03+ex*.12;return{pages,dens,eq,ex,base}}
+/* A file's kind comes only from the zone it was uploaded to. Chapters and exercise files are numbered
+   separately. c.ch lists all chapters (upload order) and then all exercise files: this is the schedule order. */
 function estimate(c){const m=LV[c.level].m;
-  c.ch=c.files.map((f,i)=>{const a=analyse(f),lo=Math.max(.5,Math.round(a.base*m*2)/2);return{...a,name:f.name,n:i+1,lo,hi:Math.round(lo*1.4*2)/2}});
+  const one=(f,i,kind)=>{const a=analyse(f,kind),lo=Math.max(.5,Math.round(a.base*m*2)/2);return{...a,name:f.name,kind,n:i+1,lo,hi:Math.round(lo*1.4*2)/2}};
+  c.ch=[...c.files.map((f,i)=>one(f,i,'lecture')),...c.ex.map((f,i)=>one(f,i,'exercises'))];
   c.lo=c.ch.reduce((s,x)=>s+x.lo,0);c.hi=c.ch.reduce((s,x)=>s+x.hi,0)}
+const lab=ch=>(ch.kind==='exercises'?'تمارين ':'شابتر ')+AR(ch.n);
 const hrsTxt=c=>`${fmt1(c.lo)}–${fmt1(c.hi)} ${c.hi>10?'ساعة':'ساعات'}`;
 
 /* course form */
-function newDraft(){draft={files:[],level:null};$('cName').value='';{const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;let o='<option value="">اختر اليوم</option>';for(let i=1;i<=90;i++){const d=addD(TODAY,i);o+=`<option value="${iso(d)}">${wFmt.format(d)} ${dFmt.format(d)}</option>`}$('cDate').innerHTML=o;$('cDate').value=''}
+function newDraft(){draft={files:[],ex:[],level:null};$('cName').value='';{const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;let o='<option value="">اختر اليوم</option>';for(let i=1;i<=90;i++){const d=addD(TODAY,i);o+=`<option value="${iso(d)}">${wFmt.format(d)} ${dFmt.format(d)}</option>`}$('cDate').innerHTML=o;$('cDate').value=''}
   document.querySelectorAll('#lvl .pill').forEach(p=>p.classList.remove('on'));document.querySelectorAll('#course .err').forEach(e=>e.classList.remove('on'));
   document.querySelectorAll('#course input').forEach(e=>e.classList.remove('bad'));drawFiles();show('course')}
-function drawFiles(){$('fileList').innerHTML=draft.files.map((f,i)=>f.bad?
+/* two upload zones with the same chips and checks: chapters (required) and exercise files (optional) */
+const ZONES={files:{input:'cFiles',list:'fileList',err:'eFiles'},ex:{input:'cEx',list:'exList',err:'eEx'}};
+function drawFiles(){for(const z in ZONES)$(ZONES[z].list).innerHTML=draft[z].map((f,i)=>f.bad?
   `<div class="chip bad"><span>${icon('warn',16)} <bdi>${esc(f.name)}</bdi>: ${f.bad}</span><span class="acts"><button data-re="${i}">أعد الرفع</button><button data-del="${i}">احذفه وكمّل</button></span></div>`:
   `<span class="chip"><bdi>${esc(f.name)}</bdi><button data-del="${i}" aria-label="احذف">✕</button></span>`).join('')}
 let reIdx=null;
-$('cFiles').addEventListener('change',e=>{const list=[...e.target.files].map(f=>({name:f.name,size:f.size,bad:!/\.pdf$/i.test(f.name)?'مو PDF، فما نقدر نقراه. ارفعه بصيغة PDF أو احذفه.':f.size>40e6?'أكبر من ٤٠ ميقا. صغّر حجمه أو احذفه.':''}));
-  if(reIdx!==null&&list[0]){draft.files[reIdx]=list[0];reIdx=null}else draft.files.push(...list);e.target.value='';drawFiles();$('eFiles').classList.remove('on')});
-$('fileList').addEventListener('click',e=>{const d=e.target.dataset;if(d.del!==undefined){draft.files.splice(+d.del,1);drawFiles()}if(d.re!==undefined){reIdx=+d.re;$('cFiles').click()}});
+for(const z in ZONES){const Z=ZONES[z];
+  $(Z.input).addEventListener('change',e=>{const list=[...e.target.files].map(f=>({name:f.name,size:f.size,bad:!/\.pdf$/i.test(f.name)?'مو PDF، فما نقدر نقراه. ارفعه بصيغة PDF أو احذفه.':f.size>40e6?'أكبر من ٤٠ ميقا. صغّر حجمه أو احذفه.':''}));
+    if(reIdx!==null&&list[0]){draft[z][reIdx]=list[0];reIdx=null}else draft[z].push(...list);e.target.value='';drawFiles();$(Z.err).classList.remove('on')});
+  $(Z.list).addEventListener('click',e=>{const d=e.target.dataset;if(d.del!==undefined){draft[z].splice(+d.del,1);drawFiles()}if(d.re!==undefined){reIdx=+d.re;$(Z.input).click()}})}
 $('lvl').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b)return;draft.level=b.dataset.v;document.querySelectorAll('#lvl .pill').forEach(p=>p.classList.toggle('on',p===b));$('eLvl').classList.remove('on')});
 $('saveCourse').addEventListener('click',()=>{const name=$('cName').value.trim(),dv=$('cDate').value,date=dv?day0(dv+'T00:00'):null;
-  const ok={eName:!!name,eFiles:draft.files.some(f=>!f.bad)&&!draft.files.some(f=>f.bad),eLvl:!!draft.level,eDate:!!date&&date>TODAY};
+  const ok={eName:!!name,eFiles:draft.files.some(f=>!f.bad)&&!draft.files.some(f=>f.bad),eEx:!draft.ex.some(f=>f.bad),eLvl:!!draft.level,eDate:!!date&&date>TODAY};
   if(draft.files.some(f=>f.bad))$('eFiles').textContent='فيه ملف ما نقدر نقراه. أعد رفعه أو احذفه، وبعدها احفظ.';else $('eFiles').textContent='ما رفعت ولا شابتر. ارفع ملف PDF واحد على الأقل.';
   for(const k in ok)$(k).classList.toggle('on',!ok[k]);$('cName').classList.toggle('bad',!ok.eName);$('cDate').classList.toggle('bad',!ok.eDate);
-  if(Object.values(ok).every(Boolean)){const c={name,files:draft.files,level:draft.level,date,color:COLORS[courses.length%COLORS.length]};estimate(c);courses.push(c);justAdded=true;setTimeout(()=>{justAdded=false},2500);
-    load(draft.files.length,()=>{drawList();show('list')})}});
+  if(Object.values(ok).every(Boolean)){const c={name,files:draft.files,ex:draft.ex,level:draft.level,date,color:COLORS[courses.length%COLORS.length]};estimate(c);courses.push(c);justAdded=true;setTimeout(()=>{justAdded=false},2500);
+    load(draft.files.length+draft.ex.length,()=>{drawList();show('list')})}});
 $('cancelCourse').addEventListener('click',()=>show(courses.length?'list':'home'));
 
 function load(n,done){$('ldTxt').textContent=`نقرأ ${AR(n)} ${n>2&&n<11?'ملفات':'ملف'} ونحسب وقت مذاكرتك...`;$('loader').classList.add('on');let p=0;const step=100/Math.max(4,n*2);
@@ -384,19 +396,19 @@ function drawSched(){const p=plan,w=$('warn');
       const s=(p.sess[+d]||[])[si];
       if(!s){h+='<div class="ses free"></div>';return}
       const id=`${+d}_${si}`,bad=pick&&!canSwap(pick,id);
-      h+=`<button class="ses${pick===id?' pick':''}${bad?' no':''}${+d===TMR?' tmr':''}" data-id="${id}" style="background:${s.c.color};--cc:${s.c.color}">${esc(s.c.name)}<span>شابتر ${AR(s.ch.n)} (${s.hrs>=1?fmt1(s.hrs)+' س':AR(Math.max(5,Math.round(s.hrs*60/5)*5))+' د'})</span>
+      h+=`<button class="ses${pick===id?' pick':''}${bad?' no':''}${+d===TMR?' tmr':''}" data-id="${id}" style="background:${s.c.color};--cc:${s.c.color}">${esc(s.c.name)}<span>${lab(s.ch)} (${s.hrs>=1?fmt1(s.hrs)+' س':AR(Math.max(5,Math.round(s.hrs*60/5)*5))+' د'})</span>
 </button>`});
     if(b.type==='s')si++});
   $('grid').innerHTML=h;$('grid').classList.toggle('editing',editing);
   const gw=document.querySelector('.gridwrap');gw.classList.toggle('lit0',week===0);if(week===0&&!gw.classList.contains('lit'))setTimeout(()=>gw.classList.add('lit'),350);
-  $('left').innerHTML=p.left.length?`<h3>ما لحقنا لها وقت</h3>`+p.left.map(x=>`<div class="row" style="background:${x.c.color}"><span>${esc(x.c.name)} · شابتر ${AR(x.ch.n)}</span><span class="hrs">${fmt1(x.rem)} س ناقصة</span></div>`).join(''):''}
+  $('left').innerHTML=p.left.length?`<h3>ما لحقنا لها وقت</h3>`+p.left.map(x=>`<div class="row" style="background:${x.c.color}"><span>${esc(x.c.name)}، ${lab(x.ch)}</span><span class="hrs">${fmt1(x.rem)} س ناقصة</span></div>`).join(''):''}
 const getS=id=>{const[d,i]=id.split('_');return plan.sess[d][i]};
 function canSwap(a,b){if(a===b)return true;const A=getS(a),B=getS(b),da=+a.split('_')[0],db=+b.split('_')[0];return +A.c.date>db&&+B.c.date>da}
 $('grid').addEventListener('click',e=>{const el=e.target.closest('.ses[data-id]');if(!el)return;const id=el.dataset.id;
   if(!editing){const t=$('tip');if(t.classList.contains('on')&&t.dataset.id===id){hideTip()}else showTip(el);return}
   if(!pick){pick=id}else if(pick===id){pick=null}else if(canSwap(pick,id)){const[d1,i1]=pick.split('_'),[d2,i2]=id.split('_');const t=plan.sess[d1][i1];plan.sess[d1][i1]=plan.sess[d2][i2];plan.sess[d2][i2]=t;pick=null}else return;drawSched()});
 function showTip(el){const s=getS(el.dataset.id),t=$('tip');
-  t.innerHTML=`<b>${esc(s.c.name)} · شابتر ${AR(s.ch.n)}: ${fmt1(s.ch.lo)}–${fmt1(s.ch.hi)} ساعات</b><br>${AR(s.ch.pages)} صفحة · كثافة النص ${s.ch.dens}<br>${AR(s.ch.eq)} معادلة · ${AR(s.ch.ex)} تمرين<br>مستواك فيها: ${LV[s.c.level].t}`;
+  t.innerHTML=`<b>${esc(s.c.name)}، ${lab(s.ch)}: ${fmt1(s.ch.lo)}–${fmt1(s.ch.hi)} ساعات</b><br>${AR(s.ch.pages)} صفحة، كثافة النص ${s.ch.dens}<br>${AR(s.ch.eq)} معادلة، ${AR(s.ch.ex)} تمرين<br>مستواك فيها: ${LV[s.c.level].t}`;
   t.dataset.id=el.dataset.id;t.classList.add('on');const r=el.getBoundingClientRect(),w=t.offsetWidth,h=t.offsetHeight;
   let x=r.right-w;if(x<8)x=r.left;x=Math.max(8,Math.min(innerWidth-w-8,x));let y=r.bottom+8;if(y+h>innerHeight-8)y=r.top-h-8;t.style.left=x+'px';t.style.top=y+'px'}
 const hideTip=()=>$('tip').classList.remove('on');
@@ -420,8 +432,8 @@ $('backDates').addEventListener('click',()=>{drawList();show('list')});
 
 /* demo data */
 $('demo').addEventListener('click',()=>{courses=[];
-  const mk=(n,k,extra)=>[...Array(k)].map((_,i)=>({name:`chapter${i+1}.pdf`,size:900000+((hash(n+i)%40)*60000)})).concat(extra?[{name:'exercises.pdf',size:600000}]:[]);
-  [['الرياضيات ١',5,'weak',6,1],['الفيزياء العامة',4,'mid',8,0],['Data Structures',4,'strong',10,1],['مبادئ الإحصاء والاحتمالات',3,'mid',12,0]].forEach(([n,k,l,d,ex],i)=>{const c={name:n,files:mk(n,k,ex),level:l,date:addD(TODAY,d),color:COLORS[i]};estimate(c);courses.push(c)});
+  const mk=(n,k)=>[...Array(k)].map((_,i)=>({name:`chapter${i+1}.pdf`,size:900000+((hash(n+i)%40)*60000)}));
+  [['الرياضيات ١',5,'weak',6,1],['الفيزياء العامة',4,'mid',8,0],['Data Structures',4,'strong',10,1],['مبادئ الإحصاء والاحتمالات',3,'mid',12,0]].forEach(([n,k,l,d,ex],i)=>{const c={name:n,files:mk(n,k),ex:ex?[{name:'exercises.pdf',size:600000}]:[],level:l,date:addD(TODAY,d),color:COLORS[i]};estimate(c);courses.push(c)});
   load(6,()=>{drawList();show('list')})});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.on').forEach(m=>m.classList.remove('on'))});
 }

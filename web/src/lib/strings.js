@@ -24,14 +24,21 @@ export const reasonText = ({ pages, density, equations, exercises, level }) =>
 
 export const HOURS_UNIT = (hi) => (hi > 10 ? 'ساعة' : 'ساعات');
 
+// The two upload zones on the course entry screen. A file's kind comes only from its zone.
+export const UPLOAD_ZONE = {
+  lecture: { label: 'ملفات الشابترات:' },
+  exercises: { label: 'ملفات التمارين:', hint: '(اختياري)' },
+};
+
+// How a file is named in the list, the schedule and the tooltip. Chapters and exercise files are
+// numbered separately: «شابتر ٢», «تمارين ١». `numberText` is already formatted (Arabic digits).
+export const fileLabel = (kind, numberText) => `${kind === 'exercises' ? 'تمارين' : 'شابتر'} ${numberText}`;
+
 // Temporary Day 1 test page (features/estimate/PdfTestPage.jsx). Deleted when screen 2 is built.
 export const PDF_TEST = {
   title: 'صفحة اختبار قراءة الـPDF (مؤقتة)',
   level: 'مستواك في المادة:',
-  files: 'ملفات الشابترات:',
   file: 'الملف',
-  kind: 'النوع',
-  kindLabel: { lecture: 'محاضرة', exercises: 'تمارين' },
   pages: 'الصفحات',
   words: 'كلمة في الصفحة',
   density: 'الكثافة',

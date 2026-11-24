@@ -3,31 +3,46 @@
 import { useState } from 'react';
 import { readChapter } from '../../lib/pdf.js';
 import { fmtNumber, fmtRange } from '../../lib/format.js';
-import { DENSITY_LABEL, FILE_ERROR, HOURS_UNIT, LEVEL_LABEL, PDF_TEST as T, loadingText } from '../../lib/strings.js';
+import {
+  DENSITY_LABEL,
+  FILE_ERROR,
+  HOURS_UNIT,
+  LEVEL_LABEL,
+  PDF_TEST as T,
+  UPLOAD_ZONE,
+  fileLabel,
+  loadingText,
+} from '../../lib/strings.js';
 import { courseTotal, estimateChapter } from './estimate.js';
+
+const KINDS = ['lecture', 'exercises']; // the zone order on screen, and the schedule order
 
 export default function PdfTestPage() {
   const [level, setLevel] = useState('mid');
-  const [chapters, setChapters] = useState([]); // what readChapter returned, in upload order
+  // What readChapter returned, per upload zone, in upload order.
+  const [files, setFiles] = useState({ lecture: [], exercises: [] });
   const [reading, setReading] = useState(0); // how many files are being read right now
 
-  async function onFiles(event) {
-    const files = [...event.target.files];
+  async function onFiles(kind, event) {
+    const picked = [...event.target.files];
     event.target.value = ''; // lets the same file be picked again
-    if (!files.length) return;
-    setReading(files.length);
+    if (!picked.length) return;
+    setReading(picked.length);
     const read = [];
-    for (const file of files) read.push(await readChapter(file)); // one at a time keeps memory low
-    setChapters((prev) => [...prev, ...read]);
+    for (const file of picked) read.push(await readChapter(file, kind)); // one at a time keeps memory low
+    setFiles((prev) => ({ ...prev, [kind]: [...prev[kind], ...read] }));
     setReading(0);
   }
 
+  // Chapters first, then exercise files, each numbered on its own («شابتر ٢», «تمارين ١»).
   // The estimate is recalculated from the saved numbers when the level changes; files are not re-read.
-  const rows = chapters.map((ch, i) => ({
-    ...ch,
-    index: i + 1,
-    estimate: ch.metrics ? estimateChapter(ch.metrics, level) : null,
-  }));
+  const rows = KINDS.flatMap((kind) =>
+    files[kind].map((ch, i) => ({
+      ...ch,
+      index: i + 1,
+      estimate: ch.metrics ? estimateChapter(ch.metrics, level) : null,
+    })),
+  );
   const total = courseTotal(rows);
 
   return (
@@ -50,16 +65,27 @@ export default function PdfTestPage() {
         ))}
       </fieldset>
 
-      <p>
-        <label>
-          {T.files} <input type="file" multiple onChange={onFiles} disabled={reading > 0} />
-        </label>{' '}
-        {chapters.length > 0 && (
-          <button type="button" onClick={() => setChapters([])}>
+      {KINDS.map((kind) => (
+        <p key={kind}>
+          <label>
+            {UPLOAD_ZONE[kind].label} {UPLOAD_ZONE[kind].hint}{' '}
+            <input
+              type="file"
+              multiple
+              data-kind={kind}
+              onChange={(e) => onFiles(kind, e)}
+              disabled={reading > 0}
+            />
+          </label>
+        </p>
+      ))}
+      {rows.length > 0 && (
+        <p>
+          <button type="button" onClick={() => setFiles({ lecture: [], exercises: [] })}>
             {T.clear}
           </button>
-        )}
-      </p>
+        </p>
+      )}
 
       {reading > 0 && <p role="status">{loadingText(reading, fmtNumber(reading))}</p>}
 
@@ -67,12 +93,11 @@ export default function PdfTestPage() {
 
       {rows.length > 0 && (
         <>
-          <table border="1" cellPadding="6" style={{ width: "100%" }}>
+          <table border="1" cellPadding="6" style={{ width: '100%' }}>
             <thead>
               <tr>
                 <th>#</th>
                 <th>{T.file}</th>
-                <th>{T.kind}</th>
                 <th>{T.pages}</th>
                 <th>{T.words}</th>
                 <th>{T.density}</th>
@@ -84,12 +109,11 @@ export default function PdfTestPage() {
             </thead>
             <tbody>
               {rows.map((ch) => (
-                <tr key={ch.index}>
-                  <td>{fmtNumber(ch.index)}</td>
+                <tr key={`${ch.kind}-${ch.index}`}>
+                  <td>{fileLabel(ch.kind, fmtNumber(ch.index))}</td>
                   <td>
                     <bdi>{ch.fileName}</bdi>
                   </td>
-                  <td>{T.kindLabel[ch.kind]}</td>
                   {ch.error ? (
                     <td colSpan={7} role="alert">
                       {FILE_ERROR[ch.error]}

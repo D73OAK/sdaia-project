@@ -11,7 +11,7 @@ differ from DESIGN.md, DESIGN.md and the latest `prototype.html` win. Items mark
 
 ## MVP scope
 Must stories (PRD.md). Demo = the full flow, upload → estimate → schedule:
-1. Add courses (name, chapter PDFs, level قوي / متوسط / ضعيف, exam date) → hour range per course.
+1. Add courses (name, chapter PDFs, optional exercise PDFs, level قوي / متوسط / ضعيف, exam date) → hour range per course.
 2. See the estimate split per chapter, each with its reason.
 3. Set daily hours, breaks, break length, start and end time → weekly schedule until the last exam.
 
@@ -19,12 +19,14 @@ v1 decisions (approved 2026-11-24):
 - Estimate: 5 factors only (pages, words-per-page density, equations, exercises, level). Formula and weights
   are in HANDOFF.md §7 rule 5, all in ONE config object (`ESTIMATE_CONFIG` in `estimate.js`).
   Levels: weak ×1.4, mid ×1, strong ×0.75. The weights are placeholders, to calibrate later.
-- A file name that starts with `ex`, has `ex` as a whole word, or contains `hw`, `sheet` or `تمار`
-  marks an exercise file (HANDOFF.md §7 rule 6; `index.pdf` does not match).
+- Course entry has two upload zones: «ملفات الشابترات» (required) and «ملفات التمارين» (optional).
+  A file's kind comes ONLY from its zone, never from its name (HANDOFF.md §7 rule 6). Exercise files get the
+  same checks, messages and formula, are numbered separately («تمارين ١»), and count in the course range.
 - Scanned PDFs (no text) are rejected with the HANDOFF.md §8 text. No OCR in v1.
 - Uploads: PDF only, max 40 MB per file, no limit on the number of files. Max 6 courses, enforced in code.
 - Schedule: a weekly calendar with week arrows, using the **max** (`hiHours`) of each range, from tomorrow
   to the last exam (logic: `build()` in prototype.html). Device clock and timezone.
+  Within a course: all chapters first (upload order), then all exercise files, all before its exam.
 - Courses, preferences and the plan are saved in localStorage. PDFs are never stored, only the counted numbers.
 - Swap sessions (a Should story): Day 4, only if everything else works.
 

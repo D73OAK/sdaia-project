@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_FILE_BYTES,
-  chapterKind,
   checkFile,
   countWords,
   extractPages,
@@ -10,6 +9,7 @@ import {
   isPdfHeader,
   itemsToLines,
   measurePages,
+  readChapter,
 } from './pdf.js';
 
 const bytes = (text) => new TextEncoder().encode(text);
@@ -38,27 +38,21 @@ describe('checkFile', () => {
   });
 });
 
-describe('chapterKind', () => {
-  it('marks exercise files by name', () => {
-    for (const name of [
-      'ex1.pdf',
-      'exercises.pdf',
-      'hw2.pdf',
-      'sheet3.pdf',
-      'تمارين.pdf',
-      'exercises-sheet.pdf',
-      'HW3.pdf',
-      'تمارين الفصل ٢.pdf',
-      'ch2-ex3.pdf', // «ex» as a whole word in the middle
-      'Ch2 EX.pdf',
-    ]) {
-      expect(chapterKind(name), name).toBe('exercises');
-    }
+describe('readChapter', () => {
+  // These files fail the header check, so PDF.js is never loaded and this runs in Node.
+  it('takes the kind from the upload zone, never from the file name', async () => {
+    const fromExerciseZone = await readChapter(new File(['hi'], 'chapter1.pdf'), 'exercises');
+    const fromChapterZone = await readChapter(new File(['hi'], 'exercises-sheet.pdf'), 'lecture');
+    expect(fromExerciseZone).toEqual({ fileName: 'chapter1.pdf', fileSizeBytes: 2, kind: 'exercises', error: 'not_pdf' });
+    expect(fromChapterZone.kind).toBe('lecture');
   });
-  it('does not mark «ex» inside another word', () => {
-    for (const name of ['index.pdf', 'chapter1.pdf', 'lexical-analysis.pdf', 'Complex Numbers.pdf']) {
-      expect(chapterKind(name), name).toBe('lecture');
-    }
+  it('gives exercise files the same checks as chapter files', async () => {
+    const big = new File(['%PDF-1.7', new Uint8Array(MAX_FILE_BYTES)], 'hw.pdf');
+    expect((await readChapter(big, 'exercises')).error).toBe('too_big');
+    expect((await readChapter(big, 'lecture')).error).toBe('too_big');
+  });
+  it('rejects an unknown kind', async () => {
+    await expect(readChapter(new File(['hi'], 'a.pdf'), 'notes')).rejects.toThrow();
   });
 });
 

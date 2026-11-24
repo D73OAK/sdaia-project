@@ -18,10 +18,6 @@ const FRACTION = /[0-9٠-٩]\s*\/\s*[0-9٠-٩]/;
 const EXERCISE_HEADING =
   /^(?:exercises?|examples?|problems?|(?:ال)?(?:تمرين|تمارين|مثال|أمثلة|سؤال|أسئلة))(?=$|[\s\d٠-٩:.)\-–])/i;
 
-// An exercise file (HANDOFF.md §7 rule 6): the name starts with «ex» (ex1, exercises), has «ex» as a
-// whole word (ch2-ex3: not between two letters, so index.pdf does not match), or contains hw, sheet or تمار.
-const EXERCISE_FILE_NAME = /^ex|(?<!\p{L})ex(?!\p{L})|hw|sheet|تمار/iu;
-
 // ---------- pure helpers ----------
 
 // True when the bytes look like a PDF: real PDFs start with "%PDF-" (we allow it within the
@@ -30,8 +26,6 @@ export function isPdfHeader(bytes) {
   const head = String.fromCharCode(...bytes.slice(0, 1024));
   return head.includes('%PDF-');
 }
-
-export const chapterKind = (fileName) => (EXERCISE_FILE_NAME.test(fileName) ? 'exercises' : 'lecture');
 
 export const countWords = (line) => line.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 
@@ -125,11 +119,14 @@ function loadPdfjs() {
   return pdfjsPromise;
 }
 
-// Reads one chapter file. Always resolves (never throws):
+// Reads one uploaded file. `kind` comes ONLY from the upload zone it was dropped in (HANDOFF.md §7 rule 6):
+// 'lecture' for «ملفات الشابترات», 'exercises' for «ملفات التمارين». Both kinds get the same checks.
+// Never throws for a bad file; it resolves with the error code instead:
 //   { fileName, fileSizeBytes, kind, metrics }  or  { fileName, fileSizeBytes, kind, error }
 // error is one of 'not_pdf' | 'too_big' | 'no_text' | 'unreadable' (damaged or password-protected).
-export async function readChapter(file) {
-  const base = { fileName: file.name, fileSizeBytes: file.size, kind: chapterKind(file.name) };
+export async function readChapter(file, kind) {
+  if (kind !== 'lecture' && kind !== 'exercises') throw new Error(`Unknown kind: ${kind}`);
+  const base = { fileName: file.name, fileSizeBytes: file.size, kind };
   const problem = await checkFile(file);
   if (problem) return { ...base, error: problem };
   try {

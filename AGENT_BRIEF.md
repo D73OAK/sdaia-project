@@ -1,6 +1,6 @@
 # Brief for the AI coding agent
 
-You are building **ميزان المذاكرة** (Study Scale), an Arabic RTL web app. A student uploads one PDF per chapter for each course and gets an estimated study-hours range per chapter with the reasons, then a weekly study schedule up to the last exam. Build it in **4 days**, for a beginner who works alone.
+You are building **ميزان المذاكرة** (Study Scale), an Arabic RTL web app. A student uploads one PDF per chapter for each course (plus optional exercise files in a separate upload zone) and gets an estimated study-hours range per chapter with the reasons, then a weekly study schedule up to the last exam. Build it in **4 days**, for a beginner who works alone.
 
 ## Read first, in this order
 1. `PRD.md`: the problem, the user, the scope, and what is out of scope.
@@ -12,7 +12,7 @@ You are building **ميزان المذاكرة** (Study Scale), an Arabic RTL we
 ## Hard rules
 - Arabic, `dir="rtl"`. Laptop and tablet first. Every hover interaction needs a tap equivalent.
 - No accounts, no login, no backend database in v1. Keep all state in the browser (`localStorage` for the "Should: saved schedule" story if time allows).
-- Only PDF. Each file = exactly one chapter. Estimate only the chapters the student uploaded.
+- Only PDF. Each file in «ملفات الشابترات» = exactly one chapter; each file in the optional «ملفات التمارين» zone = one exercise file. Estimate only the files the student uploaded.
 - From opening the app to seeing the schedule must take under **10 minutes** for 4 courses.
 - Do not add features that are not in PRD.md. Out of scope: drag-and-drop, notifications, sharing, sync, non-PDF files.
 
@@ -21,7 +21,9 @@ For each chapter PDF, extract:
 1. `pages`: the page count
 2. `density`: average words per page, bucketed into low (<120), mid (120–300), and high (>300)
 3. `equations`: the count of math symbols and equation-like lines (`= ∑ √ ∫ ≤ ≥ ^ π`, fractions)
-4. `exercises`: the count of "Exercise / Example / Problem / تمرين / مثال / سؤال" headings. A file whose name starts with `ex`, has `ex` as a whole word (`ch2-ex3.pdf`), or contains `hw`, `sheet` or `تمار` counts as an exercise file (`index.pdf` does not)
+4. `exercises`: the count of "Exercise / Example / Problem / تمرين / مثال / سؤال" headings.
+
+A file's kind (`lecture` or `exercises`) comes **only** from the upload zone it was dropped in, never from its name. Exercise files get the same checks, error messages and formula as chapters, are numbered separately («تمارين ١», «تمارين ٢»), and count in the course's hours range.
 5. `level`: the student's level in the course: strong (×0.75), mid (×1.0), weak (×1.4)
 
 Starting formula, in hours (weights are placeholders to calibrate later; keep them in one config object):
@@ -38,7 +40,7 @@ hi   = round_to_half(lo * 1.4)
 - Uses the **upper bound `hi`** of each chapter.
 - Days run from tomorrow up to the last exam. No sessions on or after a course's exam day.
 - Each day starts at the user's start time: session, break, session... There are `breaks + 1` sessions, each `hoursPerDay / (breaks+1)` long.
-- Fill each session with the remaining chapter of the course whose **exam is earliest** and still has a future exam date. Fill chapters in order.
+- Fill each session with the remaining chapter of the course whose **exam is earliest** and still has a future exam date. Within a course, fill all its chapters first (upload order), then all its exercise files (upload order), all before its exam.
 - Anything left after that goes into «ما لحقنا لها وقت».
 - Validation before building: `hoursPerDay*60 + breaks*breakMin` must be ≤ `end - start`, and `end` must be after `start`. Otherwise, show the error message from HANDOFF.md §8.
 - If anything is left over, show the "not enough time" popup first (see DESIGN.md → states).

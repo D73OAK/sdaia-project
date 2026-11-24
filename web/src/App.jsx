@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Home from './screens/Home.jsx';
 import Detail from './screens/Detail.jsx';
 import Action from './screens/Action.jsx';
+import PdfTestPage from './features/estimate/PdfTestPage.jsx'; // TEMPORARY (Day 1), see the file
 
 // Three placeholder screens = your 3 key screens. Rename them to match design/wireframes.md.
 // Routing is a tiny hash switch (#/, #/detail/1, #/action): no library needed for 3 screens.
@@ -29,6 +30,7 @@ export default function App() {
   let screen = <Home />;
   if (section === 'detail') screen = <Detail id={id} />;
   if (section === 'action') screen = <Action />;
+  if (section === 'pdf-test') screen = <PdfTestPage />;
 
   return (
     <>

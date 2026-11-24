@@ -1,45 +1,53 @@
 # sdaia-project
 
 ## Overview
-Mizan: university students study before exams without knowing how long each course needs.
-Mizan reads their chapter PDFs, estimates hours per chapter and builds a daily study schedule.
-See PRD.md for scope.
+ميزان المذاكرة (Study Scale): university students study before exams without knowing how long each course needs.
+The app reads their chapter PDFs on the device, estimates a study-hours range per chapter with a reason,
+and builds a weekly study schedule up to the last exam.
+
+**Source of truth, in this order:** `AGENT_BRIEF.md` → `PRD.md` → `HANDOFF.md` → `DESIGN.md` → `mock.json`.
+`prototype.html` is the visual and behaviour reference (its estimate is fake). When the mockup images
+differ from DESIGN.md, DESIGN.md and the latest `prototype.html` win. Items marked [?] in HANDOFF.md: ask me.
 
 ## MVP scope
-Must stories (the only ones in v1). Demo = the full flow, upload → estimate → schedule:
-1. Add courses (name, exam date, level: قوي / متوسط / ضعيف) and upload one PDF per chapter → hour range per course.
-2. See the estimate split per chapter, each with a plain reason ("٣ ساعات لأن فيه ٤٠ صفحة و٢٥ معادلة").
-3. Set daily study hours, start time, number of breaks and break length → day-by-day schedule until the last exam.
+Must stories (PRD.md). Demo = the full flow, upload → estimate → schedule:
+1. Add courses (name, chapter PDFs, level قوي / متوسط / ضعيف, exam date) → hour range per course.
+2. See the estimate split per chapter, each with its reason.
+3. Set daily hours, breaks, break length, start and end time → weekly schedule until the last exam.
 
-v1 decisions:
-- The estimate uses 5 factors only: pages, words per page, equations/symbols, exercises, level. The result is a range (min–max).
-- The schedule uses the **max** of each range, starts tomorrow at the chosen daily start time, and is a list of days (no drag and drop).
-- Scanned PDFs (no text): estimate from pages + level only and show "ملف مصوّر، التقدير تقريبي".
-- Uploads: PDF only, max 30 MB per file, max 30 files per course.
-- Data is saved in the browser (localStorage). PDFs are never stored, only the numbers counted from them.
+v1 decisions (approved 2026-11-24):
+- Estimate: 5 factors only (pages, words-per-page density, equations, exercises, level). Formula and weights
+  are in HANDOFF.md §7 rule 5, all in ONE config object (`ESTIMATE_CONFIG` in `estimate.js`).
+  Levels: weak ×1.4, mid ×1, strong ×0.75. The weights are placeholders, to calibrate later.
+- A file name matching `ex|hw|sheet|تمار` marks an exercise file.
+- Scanned PDFs (no text) are rejected with the HANDOFF.md §8 text. No OCR in v1.
+- Uploads: PDF only, max 40 MB per file, no limit on the number of files. Max 6 courses, enforced in code.
+- Schedule: a weekly calendar with week arrows, using the **max** (`hiHours`) of each range, from tomorrow
+  to the last exam (logic: `build()` in prototype.html). Device clock and timezone.
+- Courses, preferences and the plan are saved in localStorage. PDFs are never stored, only the counted numbers.
+- Swap sessions (a Should story): Day 4, only if everything else works.
 
-Out of scope: accounts, login, cross-device sync; visual calendar, drag and drop; non-PDF files;
-reminders and notifications; sharing schedules; progress tracking and stats; AI features; rescheduling after a missed day.
+Out of scope: accounts, login, cross-device sync; drag and drop; non-PDF files; reminders and notifications;
+sharing; progress tracking and stats; OCR; recording actual study time; success measurement; AI features.
 If I ask for something out of scope, say so before building it.
 
 ## Design
-- Read DESIGN.md before any UI work (written on day 2). Until it exists, build plain unstyled structure.
+- Read DESIGN.md before any UI work.
 - Arabic-first: `dir="rtl"` on `<html>`, CSS logical properties only, no letter-spacing on Arabic.
 - Arabic only for now. Every UI string lives in `web/src/lib/strings.js` so English can be added later.
-- Tone: simple Modern Standard Arabic (فصحى مبسطة). Clear, neutral, short sentences, no slang.
+- Texts: use the HANDOFF.md §8 Saudi-dialect texts exactly as written. New texts follow the same voice.
 
 ## Stack
-Versions verified on npm on 2026-11-23.
 - JavaScript, no TypeScript: the starter uses it and it's faster for a beginner.
-- React 19.3.1 + react-dom 19.3.1: the UI library, huge community.
-- Vite 8.3.8 + @vitejs/plugin-react 6.3.0: dev server and build. Vite 5 (in the starter) no longer gets security fixes.
+- React 18.3 + react-dom 18.3, Vite 5.4 + @vitejs/plugin-react 4: kept from the starter.
+  Do not upgrade unless something actually breaks.
 - Plain CSS: design tokens live only in `web/src/tokens.css`.
 - State: React `useReducer` + one Context, saved to localStorage. No state library.
 - Routing: the starter's hash switch in `App.jsx`. No router library.
-- pdfjs-dist 6.5.438 (Mozilla PDF.js): reads page count and text in the browser.
-- Vitest 5.1.0: tests for the estimate and schedule math only.
-- Backend: none. No accounts, sharing or sync, so a server adds risk for nothing.
-- Package manager: npm. Node 26 is installed here (Vite needs ^20.19 or >=22.12).
+- pdfjs-dist 6.5.438 (Mozilla PDF.js): reads page count and text in the browser, loaded on first use.
+- Vitest 3.2.4 (the newest line that supports Vite 5): tests for the PDF counting, estimate and schedule logic.
+- Backend: none.
+- Package manager: npm. Node 26 is installed here.
 
 If it grows: cross-device saving → Supabase (Postgres + Auth). AI feature → one Vercel serverless
 function to hold the key. Real OCR for scanned PDFs → Tesseract.js.
@@ -50,7 +58,7 @@ Run from `web/`:
 - Dev: `npm run dev` (on a phone, same Wi-Fi: `npm run phone`)
 - Build: `npm run build`
 - Preview build: `npm run preview`
-- Test: `npm test` (to confirm: the script is added together with Vitest)
+- Test: `npm test`
 - Lint: none yet
 
 ## Architecture
@@ -61,35 +69,37 @@ functions with no UI, so it can be tested and later moved to a server unchanged.
 ```
 sdaia-project/
 ├── CLAUDE.md            # this file
+├── AGENT_BRIEF.md       # the brief: hard rules, estimate, schedule, 4-day order
 ├── PRD.md               # product scope
-├── DESIGN.md            # design system (day 2)
+├── HANDOFF.md           # screens, paths, data, actions, rules, exact state texts (§8)
+├── DESIGN.md            # design system (wins over the prototype)
+├── mock.json            # sample data (moves to web/src/data/ when the screens are built)
+├── prototype.html       # visual + behaviour reference
 ├── design/              # refs/, wireframes.md, mockups/, shots/
 ├── example/             # camp reference example, read-only
 ├── plain/               # starter's no-build version, reference only
 └── web/                 # the app (Vite + React), deployed to Vercel
     ├── index.html       # <html lang="ar" dir="rtl">
-    ├── package.json
-    ├── vite.config.js
     └── src/
         ├── main.jsx     # entry point
         ├── App.jsx      # hash routing + app state provider
         ├── base.css     # resets and base styles (tokens only)
         ├── tokens.css   # the ONLY place for design tokens
+        ├── components/  # Button, Input, Select, Pill, FileChip, Card, Badge, Banner, Modal, Session
         ├── features/
-        │   ├── courses/   # screen 1: courses, exam dates, level, PDF upload
-        │   ├── estimate/  # screen 2 + estimate.js (5 factors → range + reason)
-        │   └── schedule/  # screen 3 + schedule.js (hours → day-by-day sessions)
+        │   ├── courses/   # screens 1–3: home, course entry, course list + preferences popup
+        │   ├── estimate/  # estimate.js (5 factors → range + reason) + tests
+        │   └── schedule/  # screen 4 + schedule.js (week calendar) + tests
         ├── lib/         # pdf.js, storage.js, format.js, strings.js (shared code)
-        └── data/        # mock.json (mock data until day 3)
+        └── data/        # mock.json
 ```
-The starter's `src/screens/` moves into `features/` when each screen is built.
-Factor weights and level multipliers (e.g. ضعيف ×1.5, قوي ×0.7) are named constants at the top of `estimate.js`.
+The starter's `src/screens/` is replaced by `features/` as each screen is built.
 
-## Build order
-0) Upgrade the starter in `web/` to the versions in Stack, then check `npm run dev` and `npm run build` still work.
-1) Screens on mock data, one at a time: courses → estimate → schedule.
-2) Logic, one feature at a time: PDF reading → estimate.js (with tests) → schedule.js (with tests) → localStorage.
-3) Connect each screen to the real logic and saved data, one at a time.
+## Build order (AGENT_BRIEF.md)
+1) Day 1: PDF reading + estimate per chapter with the reason, tests, and a temporary unstyled test page.
+2) Day 2: tokens + components, then screens 1–3 and the preferences popup, one screen at a time.
+3) Day 3: schedule.js with tests, then the weekly calendar, tooltip and the not-enough-time flow.
+4) Day 4: polish, loading state, background animation, 768px tap checks, then swap sessions if time allows.
 
 ## Deployment
 Vercel (Hobby plan), project root = `web/`. No self-managed servers.
@@ -99,6 +109,8 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
 - One task at a time. Explain non-obvious decisions in plain words: I am a beginner, so name the concept.
 - Match existing patterns. Clean up what you touch. Look at the result (screenshot) before saying a UI change is done.
 - Never install a package version published in the last 7 days.
+- Commit names: each day's work is "Version N: ..." where N is the day number (Day 2 = Version 2).
+  A small fix inside a version gets a decimal: "Version 1.1: ...", "Version 2.1: ...".
 
 ## Secrets
 - None are needed today. If any appear: environment variables only, never in code.
@@ -107,37 +119,33 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
 
 ## Input rules
 - There is no server, so validate in the browser: check the real `%PDF-` header (not just the extension),
-  max 30 MB per file, max 30 files per course, required fields, exam date in the future, hours > 0.
+  max 40 MB per file, the text inside (reject scans), required fields, exam date from tomorrow on,
+  preferences in range (HANDOFF.md §7 rule 11), max 6 courses.
 - Never insert PDF text or user text as HTML (no `dangerouslySetInnerHTML`). Render as plain text.
-- Read localStorage defensively: wrap it in try/catch, use a versioned key, and fall back to empty data if it's corrupt.
+- Read and write localStorage defensively: wrap it in try/catch, use a versioned key, and fall back to
+  empty data if it's corrupt.
 - If a server is ever added, validate there too.
 
-<!--
-  الصق هذا القسم في آخر CLAUDE.md حقك (أو AGENTS.md لو أداتك Codex أو Cursor).
-  لا تستبدل الملف: ملفك فيه قرارات أمس (الـPRD والـstack). هذا قسم يُضاف تحت.
-  ما عندك CLAUDE.md أصلًا (ماشي على مثال كورة الخميس)؟ غيّر اسم هذا الملف إلى CLAUDE.md.
--->
-
-## UI rules (Day 2: design first)
+## UI rules
 
 - Read `DESIGN.md` before any UI work. Use only its tokens. If something you need is not in
   DESIGN.md, ask me first. Never invent a colour, a font size or a font.
-- The frontend lives in `web/` (Vite + React). Tokens live ONLY in `web/src/tokens.css` and mirror
-  DESIGN.md. No hex colours and no px font sizes anywhere else.
-- When you fill `web/src/tokens.css` from DESIGN.md, delete the `--starter-banner` line.
+- Tokens live ONLY in `web/src/tokens.css` and mirror DESIGN.md. No hex colours and no px font sizes
+  anywhere else. When you fill `tokens.css` from DESIGN.md, delete the `--starter-banner` line.
 - Arabic UI, RTL. `dir="rtl"` is set once on `<html>`. Logical CSS properties only
   (`margin-inline-start`, `padding-inline`, `inset-inline-end`, `text-align: start`); never left/right.
-  Do not hand-reverse flex rows. No `letter-spacing` and no uppercase on Arabic text.
-- English names go in `<bdi>`. Codes with dashes and long numbers go in `<span dir="ltr">`.
+  Do not hand-reverse flex rows. No `letter-spacing` and no uppercase on Arabic text. No emoji.
+- Touch targets 44px or more. Every hover interaction needs a tap equivalent.
+- English names and file names go in `<bdi>`. Codes with dashes and long numbers go in `<span dir="ltr">`.
   Inputs that take user text get `dir="auto"`.
-- Numbers, prices and dates go only through `web/src/lib/format.js` (Intl). The numeral system is
-  written in DESIGN.md (default: Arabic-Indic ١٢٣ in the UI, 0-9 only in code; never zero-pad;
-  no middle dot (U+00B7) next to a number, use «،»).
-- Mock data only, from `web/src/data/mock.json`, until Day 3. No backend, no real API calls.
-  Mock data is Arabic and keeps one very long name, one English name and one number-heavy line.
-- One screen per task. Do not touch other screens, routing or tokens unless I ask.
-- Design files live in `design/`: `refs/` (references + notes.md), `wireframes.md`, `mockups/`, `shots/`.
-- Never tell me a UI task is done without a viewport screenshot at 375px wide (and 1280px when I ask),
-  compared with the mockup in `design/mockups/`. Save the screenshots in `design/shots/`.
-- If the stack in this file is not Vite + React, keep these rules, port them to that stack,
-  and ask me before replacing `web/`.
+- Numbers and dates go only through `web/src/lib/format.js` (Intl, `ar-u-ca-gregory-nu-arab`):
+  Arabic-Indic ١٢٣ in the UI, 0-9 only in code, never zero-pad, decimal «٫», range «١٧–٢٣»;
+  no middle dot (U+00B7) next to a number, use «،».
+- Reusable components (button, input, select, card, session, modal...) so later screens reuse them.
+- `mock.json` is only for building and testing the UI. No backend, no real API calls.
+- One screen per task, including its states from HANDOFF.md §4 with the exact texts from §8.
+  Do not touch other screens, routing or tokens unless I ask.
+- Design files live in `design/`: `refs/`, `wireframes.md`, `mockups/`, `shots/`.
+- After each screen: run the app, take viewport screenshots at 1280px and 768px, save them in
+  `design/shots/`, compare them with `prototype.html` and `design/mockups/`, list every difference,
+  and stop for my OK.

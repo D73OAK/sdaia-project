@@ -1,0 +1,360 @@
+{
+  "_note": "بيانات تجريبية واقعية. اليوم المفترض 2026-11-24، فـ«بكرة» هو 2026-11-25.",
+  "today": "2026-11-24",
+  "courses": [
+    {
+      "id": "c1",
+      "name": "الرياضيات ١",
+      "level": "weak",
+      "examDate": "2026-11-30",
+      "color": "#8FA3D6",
+      "order": 1,
+      "chapters": [
+        {
+          "id": "c1-ch1",
+          "fileName": "chapter1.pdf",
+          "fileSizeBytes": 2184000,
+          "kind": "lecture",
+          "index": 1,
+          "metrics": {
+            "pages": 37,
+            "density": "low",
+            "wordsPerPage": 96,
+            "equations": 12,
+            "exercises": 5
+          },
+          "estimate": {
+            "loHours": 4.0,
+            "hiHours": 5.5,
+            "reason": "٣٧ صفحة · كثافة النص خفيفة · ١٢ معادلة · ٥ تمرين · مستواك فيها: ضعيف"
+          }
+        },
+        {
+          "id": "c1-ch2",
+          "fileName": "chapter2.pdf",
+          "fileSizeBytes": 2610000,
+          "kind": "lecture",
+          "index": 2,
+          "metrics": {
+            "pages": 42,
+            "density": "mid",
+            "wordsPerPage": 184,
+            "equations": 21,
+            "exercises": 6
+          },
+          "estimate": {
+            "loHours": 5.5,
+            "hiHours": 7.5,
+            "reason": "٤٢ صفحة · كثافة النص متوسطة · ٢١ معادلة · ٦ تمرين · مستواك فيها: ضعيف"
+          }
+        },
+        {
+          "id": "c1-ch3",
+          "fileName": "chapter3.pdf",
+          "fileSizeBytes": 1920000,
+          "kind": "lecture",
+          "index": 3,
+          "metrics": {
+            "pages": 31,
+            "density": "mid",
+            "wordsPerPage": 201,
+            "equations": 18,
+            "exercises": 4
+          },
+          "estimate": {
+            "loHours": 4.0,
+            "hiHours": 5.5,
+            "reason": "٣١ صفحة · كثافة النص متوسطة · ١٨ معادلة · ٤ تمرين · مستواك فيها: ضعيف"
+          }
+        },
+        {
+          "id": "c1-ch4",
+          "fileName": "exercises-sheet.pdf",
+          "fileSizeBytes": 640000,
+          "kind": "exercises",
+          "index": 4,
+          "metrics": {
+            "pages": 9,
+            "density": "mid",
+            "wordsPerPage": 150,
+            "equations": 30,
+            "exercises": 18
+          },
+          "estimate": {
+            "loHours": 5.5,
+            "hiHours": 7.5,
+            "reason": "٩ صفحة · كثافة النص متوسطة · ٣٠ معادلة · ١٨ تمرين · مستواك فيها: ضعيف"
+          }
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "name": "مبادئ الإحصاء والاحتمالات",
+      "level": "mid",
+      "examDate": "2026-12-03",
+      "color": "#A29CD3",
+      "order": 2,
+      "chapters": [
+        {
+          "id": "c2-ch1",
+          "fileName": "chapter1.pdf",
+          "fileSizeBytes": 1530000,
+          "kind": "lecture",
+          "index": 1,
+          "metrics": {
+            "pages": 28,
+            "density": "high",
+            "wordsPerPage": 342,
+            "equations": 9,
+            "exercises": 3
+          },
+          "estimate": {
+            "loHours": 3.0,
+            "hiHours": 4.0,
+            "reason": "٢٨ صفحة · كثافة النص عالية · ٩ معادلة · ٣ تمرين · مستواك فيها: متوسط"
+          }
+        },
+        {
+          "id": "c2-ch2",
+          "fileName": "chapter2.pdf",
+          "fileSizeBytes": 1710000,
+          "kind": "lecture",
+          "index": 2,
+          "metrics": {
+            "pages": 33,
+            "density": "mid",
+            "wordsPerPage": 228,
+            "equations": 14,
+            "exercises": 4
+          },
+          "estimate": {
+            "loHours": 3.0,
+            "hiHours": 4.0,
+            "reason": "٣٣ صفحة · كثافة النص متوسطة · ١٤ معادلة · ٤ تمرين · مستواك فيها: متوسط"
+          }
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "name": "Data Structures",
+      "level": "strong",
+      "examDate": "2026-12-06",
+      "color": "#8DB6C4",
+      "order": 3,
+      "chapters": [
+        {
+          "id": "c3-ch1",
+          "fileName": "01-arrays-and-lists.pdf",
+          "fileSizeBytes": 2950000,
+          "kind": "lecture",
+          "index": 1,
+          "metrics": {
+            "pages": 46,
+            "density": "low",
+            "wordsPerPage": 88,
+            "equations": 2,
+            "exercises": 7
+          },
+          "estimate": {
+            "loHours": 2.5,
+            "hiHours": 3.5,
+            "reason": "٤٦ صفحة · كثافة النص خفيفة · ٢ معادلة · ٧ تمرين · مستواك فيها: قوي"
+          }
+        },
+        {
+          "id": "c3-ch2",
+          "fileName": "02-stacks-queues.pdf",
+          "fileSizeBytes": 2300000,
+          "kind": "lecture",
+          "index": 2,
+          "metrics": {
+            "pages": 39,
+            "density": "low",
+            "wordsPerPage": 102,
+            "equations": 0,
+            "exercises": 6
+          },
+          "estimate": {
+            "loHours": 2.0,
+            "hiHours": 3.0,
+            "reason": "٣٩ صفحة · كثافة النص خفيفة · ٠ معادلة · ٦ تمرين · مستواك فيها: قوي"
+          }
+        },
+        {
+          "id": "c3-ch3",
+          "fileName": "03-trees.pdf",
+          "fileSizeBytes": 3120000,
+          "kind": "lecture",
+          "index": 3,
+          "metrics": {
+            "pages": 51,
+            "density": "mid",
+            "wordsPerPage": 163,
+            "equations": 4,
+            "exercises": 9
+          },
+          "estimate": {
+            "loHours": 3.0,
+            "hiHours": 4.0,
+            "reason": "٥١ صفحة · كثافة النص متوسطة · ٤ معادلة · ٩ تمرين · مستواك فيها: قوي"
+          }
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "name": "الفيزياء العامة",
+      "level": "mid",
+      "examDate": "2026-12-08",
+      "color": "#9DBFA8",
+      "order": 4,
+      "chapters": [
+        {
+          "id": "c4-ch1",
+          "fileName": "physics-ch1.pdf",
+          "fileSizeBytes": 1880000,
+          "kind": "lecture",
+          "index": 1,
+          "metrics": {
+            "pages": 30,
+            "density": "mid",
+            "wordsPerPage": 210,
+            "equations": 22,
+            "exercises": 5
+          },
+          "estimate": {
+            "loHours": 3.0,
+            "hiHours": 4.0,
+            "reason": "٣٠ صفحة · كثافة النص متوسطة · ٢٢ معادلة · ٥ تمرين · مستواك فيها: متوسط"
+          }
+        },
+        {
+          "id": "c4-ch2",
+          "fileName": "physics-ch2.pdf",
+          "fileSizeBytes": 2040000,
+          "kind": "lecture",
+          "index": 2,
+          "metrics": {
+            "pages": 34,
+            "density": "mid",
+            "wordsPerPage": 196,
+            "equations": 26,
+            "exercises": 6
+          },
+          "estimate": {
+            "loHours": 3.5,
+            "hiHours": 5.0,
+            "reason": "٣٤ صفحة · كثافة النص متوسطة · ٢٦ معادلة · ٦ تمرين · مستواك فيها: متوسط"
+          }
+        }
+      ]
+    }
+  ],
+  "rejectedFiles": [
+    {
+      "fileName": "notes.docx",
+      "reason": "not_pdf",
+      "message": "مو PDF، فما نقدر نقراه. ارفعه بصيغة PDF أو احذفه."
+    },
+    {
+      "fileName": "scan-ch5.pdf",
+      "reason": "no_text",
+      "message": "ما لقينا نص في الملف، يمكن صورة ممسوحة. ارفع نسخة فيها نص أو احذفه."
+    }
+  ],
+  "preferences": {
+    "hoursPerDay": 4,
+    "breaks": 2,
+    "breakMinutes": 30,
+    "startTime": "16:00",
+    "endTime": "22:00"
+  },
+  "plan": {
+    "needHours": 53.5,
+    "haveHours": 47.5,
+    "blocks": [
+      {
+        "type": "session",
+        "start": "16:00",
+        "lengthHours": 1.33
+      },
+      {
+        "type": "break",
+        "start": "17:20",
+        "minutes": 30
+      },
+      {
+        "type": "session",
+        "start": "17:50",
+        "lengthHours": 1.33
+      },
+      {
+        "type": "break",
+        "start": "19:10",
+        "minutes": 30
+      },
+      {
+        "type": "session",
+        "start": "19:40",
+        "lengthHours": 1.33
+      }
+    ],
+    "days": [
+      {
+        "date": "2026-11-25",
+        "label": "بكرة",
+        "sessions": [
+          {
+            "slot": 0,
+            "chapterId": "c1-ch1",
+            "hours": 1.33
+          },
+          {
+            "slot": 1,
+            "chapterId": "c1-ch1",
+            "hours": 1.33
+          },
+          {
+            "slot": 2,
+            "chapterId": "c1-ch1",
+            "hours": 1.33
+          }
+        ]
+      },
+      {
+        "date": "2026-11-26",
+        "sessions": [
+          {
+            "slot": 0,
+            "chapterId": "c1-ch1",
+            "hours": 1.33
+          },
+          {
+            "slot": 1,
+            "chapterId": "c1-ch1",
+            "hours": 0.17
+          },
+          {
+            "slot": 2,
+            "chapterId": "c1-ch2",
+            "hours": 1.33
+          }
+        ]
+      },
+      {
+        "date": "2026-11-30",
+        "exam": "c1",
+        "sessions": []
+      }
+    ],
+    "leftover": [
+      {
+        "chapterId": "c1-ch4",
+        "missingHours": 6
+      }
+    ],
+    "_note": "days مختصرة وتوضيحية (أول يومين ويوم اختبار). الحساب: الرياضيات ١ تلحق ٥ أيام × ٤ س = ٢٠ س من ٢٦، فيبقى ٦ س من c1-ch4. باقي المواد تلحق كاملة."
+  }
+}

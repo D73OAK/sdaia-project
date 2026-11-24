@@ -1,96 +1,149 @@
-# DESIGN.md
+# ميزان المذاكرة: DESIGN.md
 
-<!--
-  ذاكرة التصميم حقة مشروعك. الـagent يقراه قبل أي شغل واجهات (السطر في CLAUDE.md يقول له كذا).
-  تعبّيه في تطبيق ٣ من الـmockup اللي اخترته: إما بالـprompt "اكتب DESIGN.md" من صفحة اليوم الثاني،
-  أو بيدك. كل [ ] لازم تنمسح وتنكتب مكانها قيمة. قيم دقيقة، مو "modern" ولا "clean".
-  مثال معبّى كامل: example/DESIGN.md (كورة الخميس).
-  أقل من ٢٠٠ سطر.
--->
+المرجع البصري والتفاعلي هو `prototype.html`. إذا تعارض هذا الملف مع الـprototype، **هذا الملف هو المرجع**. كل القيم دقيقة، فلا تقرّبها.
 
-## 1. Direction
+## 1. الاتجاه
+- **الاسم:** سماء ناعمة (Soft sky).
+- **الفكرة:** سماء عصر زرقاء هادية، فيها أدوات مذاكرة مرسومة تطفو ببطء، والمواد كروت ملونة فوقها.
+- **FEEL:** هادي، يطمّن، ودود. **NOT:** متوتر، رسمي، مزدحم.
+- **الجرأة في مكان واحد:** عمود «بكرة» في الجدول (أبيض وتوهج). وكل شي غيره هادي.
+- **المنصة:** web app للابتوب والتابلت، RTL. الجوال يشتغل بالعرض (landscape)، بس مو أولوية.
 
-- Name: [اسم الاتجاه اللي اخترته، مثال: لوحة الملعب]
-- Concept: [one line: what the product feels like and why it fits its users]
-- Adjectives: [three words]
-- Primary reference: `design/refs/01-primary-[name].png`
-- Mockup: `design/mockups/home-375.png`
+## 2. Color tokens
+| Token | القيمة | المسموح فيه فقط |
+|---|---|---|
+| `--bg` | `linear-gradient(160deg, #8FB2F5 0%, #9DADF2 55%, #A9A8EE 100%)`، ثابت على `html` | خلفية كل الشاشات |
+| `--surface` | `#FFFFFF38` | كرت النموذج |
+| `--surface-grid` | `#FFFFFF30` | خلفية الجدول |
+| `--surface-2` | `#FFFFFFB0` | الحقول، والقوائم، والـchips |
+| `--pill` | `#FFFFFF80` | الـpill غير المختار |
+| `--ink` | `#1A2552` | النص الأساسي، وكل نص على ألوان المواد |
+| `--ink-2` | `#283666` | نص ثانوي على الخلفية فقط |
+| `--primary` / `--primary-shadow` | `#3F5BD8` / `#2B3FA3` | الزر الأساسي، والـpill المختار، والـfocus |
+| `--on-primary` | `#FFFFFF` | النص على الزر الأساسي |
+| `--secondary` / `--secondary-shadow` | `#B9CBF8` / `#7F95D6` | الزر الثانوي |
+| `--highlight` | `#FFFFFF` | جلسات بكرة وعنوان عمودها فقط |
+| `--mint` | `#7FD8BE` | النجاح فقط (علامة ✓، وشريط «جدولك يكفي») |
+| `--warn` / `--warn-shadow` | `#D98B84` / `#B86C66` | تحذير «الوقت ما يكفي» فقط. النص عليه `--ink` |
+| `--error-bg` / `--error-ink` | `#F4D5D2` / `#8E3A34` | رسائل الخطأ، والملف الغلط، وكرت يوم الاختبار |
+| `--hours-bg` / `--hours-ink` | `#FFFFFF66` / `#2A3A9A` | badge الساعات |
+| `--disabled-bg` / `--disabled-ink` | `#C9D3F0` / `#6A77A3` | الأزرار المعطلة |
+| `--overlay` | `#1A255255` | خلفية الـpopup |
+| `--modal` | `#EEF2FF` | الـpopup |
+| `--loader` | `#8FB2F5CC` | خلفية شاشة التحميل |
 
-### This design never does
+**ألوان المواد** (ثابتة لكل مادة بترتيب الإضافة، نفس اللون في القائمة والجدول، والحد ٦ مواد):
+`--c1 #8FA3D6` · `--c2 #A29CD3` · `--c3 #8DB6C4` · `--c4 #9DBFA8` · `--c5 #D3AFA0` · `--c6 #C9BC95`
 
-- [three things, e.g. gradients, emoji as icons, centered body text]
-- No Inter, Roboto, Arial, Space Grotesk. No purple gradients. No three identical cards in a row.
-
-## 2. Colors
-
-One dominant colour, one sharp accent. Hex values read from a screenshot are estimates: check them by eye.
-
-| Token | Hex | Role | Allowed on |
-|---|---|---|---|
-| `--color-bg` | [#] | page background | |
-| `--color-surface` | [#] | cards, sheets | |
-| `--color-ink` | [#] | main text | |
-| `--color-muted` | [#] | secondary text | never for long paragraphs |
-| `--color-primary` | [#] | main actions only | buttons, active nav |
-| `--color-accent` | [#] | one highlight per screen | never for text blocks |
-| `--color-line` | [#] | borders, dividers | |
-| `--color-danger` | [#] | errors | error text and banners only |
-
-Contrast: text on bg and on surface passes WCAG AA (4.5:1).
+**التباين المقاس:** `--ink` على الخلفية من 6.7 لين 6.9:1، و`--ink` على ألوان المواد من 5.8 لين 7.8:1، و`--ink-2` على الخلفية 5.4:1، والأبيض على `--primary` 5.7:1، و`--ink` على `--warn` 5.6:1، و`--error-ink` على `--error-bg` 5.5:1.
 
 ## 3. Typography
+| الدور | الخط | الحجم | الوزن | line-height |
+|---|---|---|---|---|
+| عنوان الشاشة | Baloo Bhaijaan 2 | 32px | 800 | 1.1 |
+| اسم المادة، وعنوان «بكرة»، والأسبوع | Baloo Bhaijaan 2 | 20px | 700 | 1.3 |
+| النص، والأزرار، والحقول، والـlabels | Tajawal (الأزرار والـpills بخط Baloo) | 16px | 500 / 700 | 1.55 |
+| الصغير: الأخطاء، والملفات، والجلسات، والأوقات، والـtooltip | Tajawal | 13px | 400 / 700 | 1.5 |
 
-- Display font: [name] [weights], from Google Fonts
-- Body font (must support Arabic): [Noto Sans Arabic / Tajawal / Cairo / Readex Pro / Almarai] [weights]
-  - Check it: type «حتى» and «على» in the font. If the final ى looks wrong (some fonts draw «حتى» like «حق»), pick another one.
-- Scale (size / line-height / weight):
-  - h1: [ ] / [ ] / [ ]
-  - h2: [ ] / [ ] / [ ]
-  - body: [16px or more] / [1.7-1.8] / [ ]
-  - caption: [ ] / [ ] / [ ]
-- No letter-spacing and no uppercase on Arabic. Opaque text colours only.
+- **٤ أحجام بس.** ما فيه letter-spacing على العربي.
+- Google Fonts: `Baloo+Bhaijaan+2:wght@500;700;800` و`Tajawal:wght@400;500;700`.
 
-## 4. Spacing and layout
+## 4. Spacing, radius, shadow
+- **شبكة 8px:** 8، 16، 24، 32، 48.
+- **المحتوى:** max-width ‏1100px، وpadding ‏`clamp(20px,4vw,44px) max(4vw,16px) 60px`.
+- **كرت المادة:** padding ‏16px 24px، والمسافة بين الكروت 12px.
+- **الجدول:** gap ‏8px، وpadding ‏12px، وعمود الوقت 64px، والأيام `repeat(7, minmax(110px,1fr))`.
+- **Radius:** 24px للأزرار والكروت وكرت المادة والجدول. 18px للتحذير. 16px للحقول والقوائم والـtooltip. 14px للجلسات وbadge الساعات والـchips. 12px لرسائل الخطأ. 50% لزر ✕.
+- **ظل الأزرار:** صلب، `0 6px 0 <shadow>`.
+- **ظل كرت المادة:** `0 8px 20px #3A447A22`.
+- **ظل الـtooltip:** `0 10px 30px #1A255333`.
 
-- Spacing scale: [4, 8, 12, 16, 24, 32, 48]: use only these steps
-- Radius: [ ]   Border: [ ]   Shadow: [none / exact value]
-- Max content width: [ ]
-- Breakpoints: 375 (design here first) / 768 / 1280
-- Touch targets: 44px minimum
+## 5. الخلفية
+- رسومات خطية: قلم، وساعة رملية، وكتاب، وورقة. stroke ‏`#FFFFFF`، وعرض 3.5px، وfill ‏none، وحجم 110×85.
+- شبكة ٧×٩ تغطي الشاشة، و**opacity ‏16%**.
+- كل رسمة تتحرك ذهاب وعودة (`alternate`) بدورة **من 8 لين 17 ثانية**: إزاحة أفقية −24 أو 0 أو 24px، وعمودية من −21 لين 21px، ودوران ±10°.
+- تتوقف مع `prefers-reduced-motion`. دايماً ورا المحتوى، وما تستقبل ضغطات.
 
-## 5. Components
+## 6. Components
+### Button
+| الحالة | Primary | Secondary |
+|---|---|---|
+| default | bg `--primary`، نص أبيض، ظل `0 6px 0 --primary-shadow` | bg `--secondary`، نص `--ink`، ظل `0 6px 0 --secondary-shadow` |
+| hover | `translateY(-2px)`، ظل 8px، brightness 1.06 | نفسه |
+| pressed | `translateY(5px)`، ظل 1px | نفسه |
+| loading | spinner ‏18px بلون أبيض + «نرتّب جدولك...» | — |
+| done | bg `--mint`، نص `--ink`، ✓ + «انحفظت المادة» | — |
+| disabled | bg `--disabled-bg`، نص `--disabled-ink`، بدون ظل | نفسه |
+- min-height ‏48px، وpadding ‏12px 26px، وradius 24px.
+- **زر primary واحد بس في كل شاشة.**
+- **رابط:** بدون خلفية، underline، 16px، `--ink-2`، min-height ‏44px.
+- **زر ✕:** دائرة 44px، bg ‏`#FFFFFF99`، وفي الـhover أبيض.
 
-For each one: default, hover, focus, disabled, loading, error.
+### Input / Select
+- bg `--surface-2`، border ‏2px شفاف، radius 16px، min-height ‏46px، 16px.
+- **focus:** border ‏`--primary`. **error:** border ‏`--warn`، وتحته رسالة خطأ.
+- **التاريخ:** قائمة أيام بالعربي من بكرة لين ٩٠ يوم (مثل «الخميس ١٠ ديسمبر»). ما نستخدم `input[type=date]`.
+- **الوقت:** قائمة كل ٣٠ دقيقة من ٥:٠٠ ص لين ١١:٣٠ م (مثل «٤:٠٠ م»).
+- **الأرقام:** `type=text inputmode=numeric`، والأرقام اللاتينية تتحول لعربية وقت الكتابة.
 
-- Button (primary, secondary): [shape, colours, states]
-- Input: [ ]
-- Card: [ ]
-- Navigation: [top / bottom, active state]
-- List item: [ ]
-- Empty state: [one short line + one action]
-- Loading: [skeletons that match the real layout]
-- Error: [plain Arabic + retry]
+### Error message
+bg `--error-bg`، ونص `--error-ink` بحجم 13px وزن 700، وradius 12px، وpadding ‏3px 12px، تحت الحقل.
 
-## 6. Arabic and RTL
+### Pill selector (المستوى)
+3 pills: قوي، متوسط، ضعيف. غير المختار bg ‏`--pill`. المختار bg ‏`--primary` ونص أبيض وظل `0 4px 0`. min-height ‏44px.
 
-- `<html lang="ar" dir="rtl">`. Logical properties only. Flex rows follow `dir`.
-- Mirror: back/forward arrows, chevrons, progress that fills along the reading direction.
-- Never mirror: logos, play/pause, checkmarks, clocks, numbers.
-- English names in `<bdi>`; codes and long numbers in `<span dir="ltr">`; user inputs `dir="auto"`.
-- Numerals: Arabic-Indic ١٢٣ for every number the user reads in the Arabic UI (counts, prices, times,
-  percents); 0-9 only inside code. Never zero-pad (٥ not ٠٥); no middle dot (U+00B7) next to a number
-  (the Arabic zero is a dot), use «،». A count that is still 0 says it in words («ما فيه شي للحين»),
-  not a lone «٠». Calendar: [Gregorian / Hijri].
-  Locale in `web/src/lib/format.js`: [ar-SA-u-ca-gregory (default) / ar-SA (Hijri)]
-  Choice: [keep Arabic-Indic / switch to Western 0-9 everywhere because ...]
-  (0-9 = `ar-SA-u-ca-gregory-nu-latn`; pick it only if your users expect it, and write why.)
+### Upload zone و File chip
+- **Drop zone:** bg ‏`#FFFFFF60`، وborder ‏2px dashed ‏`#FFFFFFCC`، وradius 16px، وmin-height ‏56px، وأيقونة رفع في البداية.
+- **Chip:** bg ‏`--surface-2`، وradius 14px، و13px، والاسم LTR داخل `<bdi>`، وزر ✕ بحجم 44×44.
+- **Chip error:** bg ‏`--error-bg`، وأيقونة تحذير + اسم الملف + السبب، وتحته زرين «أعد الرفع» و«احذفه وكمّل».
+
+### Course card
+bg = لون المادة، والاسم على اليمين 20px، وbadge الساعات على اليسار. **الحالة الجديدة:** دائرة ✓ نعناعية قبل الاسم، وحلقة mint ‏3px تختفي في 0.5 ثانية.
+
+### Session (في الجدول)
+| الحالة | الشكل |
+|---|---|
+| عادية | bg لون المادة، والاسم 13px وزن 700، وتحته «شابتر ن (١٫٥ س)». radius 14px، min-height ‏58px |
+| بكرة | bg أبيض، و`box-shadow: inset -8px 0 0 <لون المادة>, 0 0 22px #FFFFFFAA` |
+| بريك | شفافة، وborder ‏2px dashed ‏`#FFFFFF99`، وأيقونة كوب + «بريك ٣٠ د» |
+| يوم الاختبار | bg `--error-bg`، ونص `--error-ink`، وأيقونة ورقة + «اختبار <المادة>» |
+| محددة للتبديل | outline ‏3px ‏`--primary`، وoffset ‏2px |
+| ما ينفع تبديلها | opacity ‏0.3، وcursor ‏not-allowed |
+- **عنوان عمود بكرة:** «بكرة» بحجم 20px، وتحته اسم اليوم والتاريخ، وbg ‏`#FFFFFFB3`، وradius 14px.
+
+### Tooltip (سبب التقدير)
+bg أبيض، وradius 16px، وعرض 240px، و13px، والسطر الأول 16px وزن 700. يطلع بالـhover، والـtap، والـfocus. مكانه تحت الجلسة، وإذا ما فيه مكان يطلع فوقها.
+
+### Badge
+الساعات (`--hours-bg`)، والاختبار (`--error-bg`)، والنجاح (`--mint`)، و«ما لحقنا» (`--surface-2`). radius 14px، و13px وزن 700.
+
+### Warning و Success banner
+- **Warning:** bg ‏`--warn`، ونص `--ink`، وradius 18px، وظل `0 5px 0 --warn-shadow`، وأيقونة تحذير، وزر «غيّر ساعاتي» (bg ‏`--ink`، ونص أبيض).
+- **Success:** bg ‏`--mint`، ونص `--ink`، وradius 16px، و✓.
+
+### Modal
+- overlay ‏`--overlay`، والكرت `--modal`، وradius 24px، وعرض `min(440px,100%)`.
+- العنوان 20px، وزر ✕ في الطرف. Esc يسكّره.
+
+### Week navigation (بدل tab bar)
+«→ الأسبوع اللي قبل» على اليمين، والتاريخ في النص 20px، و«الأسبوع الجاي ←» على اليسار. الزر يتعطل في أول وآخر أسبوع.
+
+### Loading overlay
+bg ‏`--loader`، وspinner ‏64px (border ‏7px، والجزء المتحرك `--primary`)، وشريط 12px يتعبّى من اليمين، والنص 20px.
 
 ## 7. Motion
+- **دخول الشاشة:** opacity من 0، وtranslateY ‏8px، في 0.35 ثانية ease.
+- **الحركة المميزة:** بعد ما يطلع الجدول بـ350ms، يظهر توهج أبيض (radial ‏`#FFFFFF8C`) فوق عمود بكرة في 1.4 ثانية.
+- **مادة جديدة:** pop في 0.5 ثانية، مع حلقة mint.
+- **كله يتوقف مع `prefers-reduced-motion`.**
 
-- Durations: [ ]   Easing: [ ]
-- The one page-load animation: [what enters, in what order] (or "none yet")
-- Respects `prefers-reduced-motion`.
-
-## 8. The one bold place
-
-- [The single strong moment on the main screen. Everything else stays calm.]
+## 8. العربي والـRTL
+- `<html lang="ar" dir="rtl">`. الترتيب من اليمين لليسار، والجدول يبدأ ببكرة من اليمين.
+- **أسهم الرجوع تأشر لليمين:** «→ رجوع»، و«→ موادي»، و«→ الأسبوع اللي قبل». والتقدّم يأشر لليسار.
+- **الأيقونات في بداية الكلام**، يعني على اليمين.
+- **الأرقام عربية في كل الواجهة:** ٠١٢٣٤٥٦٧٨٩. والفاصلة العشرية «٫»، والمدى «١٧–٢٣».
+- **التاريخ ميلادي** بأسماء الأيام والشهور العربية (`ar-u-ca-gregory-nu-arab`).
+- **الوقت:** ١٢ ساعة مع «ص» و«م». الأوقات ما تنعكس.
+- **أسماء الملفات والأسماء الإنجليزية** (`Data Structures`) داخل `<bdi>` أو `dir="ltr"`.
+- **ما فيه letter-spacing**، وما فيه إيموجي. الأيقونات SVG خطية بـ`currentColor`.
+- **أقل حجم ضغط 44×44px.**

@@ -21,7 +21,7 @@ For each chapter PDF, extract:
 1. `pages`: the page count
 2. `density`: average words per page, bucketed into low (<120), mid (120–300), and high (>300)
 3. `equations`: the count of math symbols and equation-like lines (`= ∑ √ ∫ ≤ ≥ ^ π`, fractions)
-4. `exercises`: the count of "Exercise / Example / Problem / تمرين / مثال / سؤال" headings. A file whose name matches `ex|hw|sheet|تمار` counts as an exercise file
+4. `exercises`: the count of "Exercise / Example / Problem / تمرين / مثال / سؤال" headings. A file whose name starts with `ex`, has `ex` as a whole word (`ch2-ex3.pdf`), or contains `hw`, `sheet` or `تمار` counts as an exercise file (`index.pdf` does not)
 5. `level`: the student's level in the course: strong (×0.75), mid (×1.0), weak (×1.4)
 
 Starting formula, in hours (weights are placeholders to calibrate later; keep them in one config object):
@@ -30,7 +30,7 @@ base = pages*0.0375 + {low:0, mid:0.4, high:0.8}[density] + equations*0.03 + exe
 lo   = max(0.5, round_to_half(base * levelMultiplier))
 hi   = round_to_half(lo * 1.4)
 ```
-- Show the **range** `lo–hi` and the reason, for example «٣٠ صفحة · كثافة متوسطة · ١٢ معادلة · ٥ تمارين · مستواك: ضعيف».
+- Show the **range** `lo–hi` and the reason, for example «٣٠ صفحة، كثافة متوسطة، ١٢ معادلة، ٥ تمارين، مستواك: ضعيف».
 - If a PDF has no extractable text (a scan), show the file-error state from HANDOFF.md §8.
 - Use a client-side PDF library (for example pdf.js). The files must not leave the device.
 

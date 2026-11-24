@@ -34,7 +34,7 @@ describe('the formula', () => {
 
   it('writes the reason in Arabic digits with the level', () => {
     expect(estimateChapter(metrics, 'weak').reason).toBe(
-      '٣٧ صفحة · كثافة النص خفيفة · ١٢ معادلة · ٥ تمرين · مستواك فيها: ضعيف',
+      '٣٧ صفحة، كثافة النص خفيفة، ١٢ معادلة، ٥ تمرين، مستواك فيها: ضعيف',
     );
   });
 });

@@ -40,10 +40,25 @@ describe('checkFile', () => {
 
 describe('chapterKind', () => {
   it('marks exercise files by name', () => {
-    expect(chapterKind('exercises-sheet.pdf')).toBe('exercises');
-    expect(chapterKind('HW3.pdf')).toBe('exercises');
-    expect(chapterKind('تمارين الفصل ٢.pdf')).toBe('exercises');
-    expect(chapterKind('chapter1.pdf')).toBe('lecture');
+    for (const name of [
+      'ex1.pdf',
+      'exercises.pdf',
+      'hw2.pdf',
+      'sheet3.pdf',
+      'تمارين.pdf',
+      'exercises-sheet.pdf',
+      'HW3.pdf',
+      'تمارين الفصل ٢.pdf',
+      'ch2-ex3.pdf', // «ex» as a whole word in the middle
+      'Ch2 EX.pdf',
+    ]) {
+      expect(chapterKind(name), name).toBe('exercises');
+    }
+  });
+  it('does not mark «ex» inside another word', () => {
+    for (const name of ['index.pdf', 'chapter1.pdf', 'lexical-analysis.pdf', 'Complex Numbers.pdf']) {
+      expect(chapterKind(name), name).toBe('lecture');
+    }
   });
 });
 

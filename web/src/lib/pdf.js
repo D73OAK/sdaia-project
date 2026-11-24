@@ -18,8 +18,9 @@ const FRACTION = /[0-9٠-٩]\s*\/\s*[0-9٠-٩]/;
 const EXERCISE_HEADING =
   /^(?:exercises?|examples?|problems?|(?:ال)?(?:تمرين|تمارين|مثال|أمثلة|سؤال|أسئلة))(?=$|[\s\d٠-٩:.)\-–])/i;
 
-// A file whose name matches this is an exercise file (HANDOFF.md §7 rule 6).
-const EXERCISE_FILE_NAME = /ex|hw|sheet|تمار/i;
+// An exercise file (HANDOFF.md §7 rule 6): the name starts with «ex» (ex1, exercises), has «ex» as a
+// whole word (ch2-ex3: not between two letters, so index.pdf does not match), or contains hw, sheet or تمار.
+const EXERCISE_FILE_NAME = /^ex|(?<!\p{L})ex(?!\p{L})|hw|sheet|تمار/iu;
 
 // ---------- pure helpers ----------
 

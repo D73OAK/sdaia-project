@@ -19,7 +19,8 @@ v1 decisions (approved 2026-11-24):
 - Estimate: 5 factors only (pages, words-per-page density, equations, exercises, level). Formula and weights
   are in HANDOFF.md §7 rule 5, all in ONE config object (`ESTIMATE_CONFIG` in `estimate.js`).
   Levels: weak ×1.4, mid ×1, strong ×0.75. The weights are placeholders, to calibrate later.
-- A file name matching `ex|hw|sheet|تمار` marks an exercise file.
+- A file name that starts with `ex`, has `ex` as a whole word, or contains `hw`, `sheet` or `تمار`
+  marks an exercise file (HANDOFF.md §7 rule 6; `index.pdf` does not match).
 - Scanned PDFs (no text) are rejected with the HANDOFF.md §8 text. No OCR in v1.
 - Uploads: PDF only, max 40 MB per file, no limit on the number of files. Max 6 courses, enforced in code.
 - Schedule: a weekly calendar with week arrows, using the **max** (`hiHours`) of each range, from tomorrow
@@ -111,6 +112,8 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
 - Never install a package version published in the last 7 days.
 - Commit names: each day's work is "Version N: ..." where N is the day number (Day 2 = Version 2).
   A small fix inside a version gets a decimal: "Version 1.1: ...", "Version 2.1: ...".
+  Tag every version commit with a matching annotated git tag (v1, v1.1, v2...) and push the commit
+  and the tag to GitHub (`git push origin main` and `git push origin <tag>`).
 
 ## Secrets
 - None are needed today. If any appear: environment variables only, never in code.

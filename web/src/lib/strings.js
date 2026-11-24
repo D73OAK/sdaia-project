@@ -10,9 +10,7 @@ export const FILE_ERROR = {
   not_pdf: 'مو PDF، فما نقدر نقراه. ارفعه بصيغة PDF أو احذفه.',
   too_big: 'أكبر من ٤٠ ميقا. صغّر حجمه أو احذفه.',
   no_text: 'ما لقينا نص في الملف، يمكن صورة ممسوحة. ارفع نسخة فيها نص أو احذفه.',
-  // A damaged or password-protected PDF has no text of its own in §8 yet.
-  // Until it does, it uses the §8 "file error under the field" text.
-  unreadable: 'فيه ملف ما نقدر نقراه. أعد رفعه أو احذفه، وبعدها احفظ.',
+  unreadable: 'الملف مقفول أو تالف، فما نقدر نقراه. افتحه واحفظه من جديد، أو احذفه.', // password-protected or damaged
 };
 
 // §8: the loading text. {ن} is the number of files; the noun follows Arabic number agreement.
@@ -20,8 +18,9 @@ export const loadingText = (count, countText) =>
   `نقرأ ${countText} ${count >= 3 && count <= 10 ? 'ملفات' : 'ملف'} ونحسب وقت مذاكرتك...`;
 
 // The reason shown with each chapter estimate (same shape as mock.json and the §8 tooltip lines).
+// Parts are separated with «،», never a middle dot: next to a number the dot looks like the Arabic zero «٠».
 export const reasonText = ({ pages, density, equations, exercises, level }) =>
-  `${pages} صفحة · كثافة النص ${DENSITY_LABEL[density]} · ${equations} معادلة · ${exercises} تمرين · مستواك فيها: ${LEVEL_LABEL[level]}`;
+  `${pages} صفحة، كثافة النص ${DENSITY_LABEL[density]}، ${equations} معادلة، ${exercises} تمرين، مستواك فيها: ${LEVEL_LABEL[level]}`;
 
 export const HOURS_UNIT = (hi) => (hi > 10 ? 'ساعة' : 'ساعات');
 

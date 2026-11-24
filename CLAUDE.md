@@ -153,4 +153,5 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
 - Design files live in `design/`: `refs/`, `wireframes.md`, `mockups/`, `shots/`.
 - After each screen: run the app, take viewport screenshots at 1280px and 768px, save them in
   `design/shots/`, compare them with `prototype.html` and `design/mockups/`, list every difference,
-  and stop for my OK.
+  and stop for my OK. `design/mockups/` holds 1280px screenshots of the current `prototype.html`, one per
+  screen and state (see its README.md); retake them when `prototype.html` changes. DESIGN.md still wins.

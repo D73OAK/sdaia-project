@@ -1,58 +1,133 @@
 /*
-  tokens.css: the ONLY place colours, fonts, sizes and spacing are defined.
-  Every other file uses var(--...). No hex values anywhere else.
-
-  These values are neutral greys ON PURPOSE: the starter is a wireframe, not a design.
-  Your look comes from YOUR DESIGN.md. When you (or the agent) copy the tokens from
-  DESIGN.md into this file, also delete the --starter-banner line below:
-  the grey "هذا هيكل" banner disappears, and that is how you know the tokens are yours.
+  tokens.css: the ONLY place colours, fonts, sizes and spacing are defined. Mirrors DESIGN.md exactly
+  (direction «سماء ناعمة»). Every other file uses var(--...). No hex values anywhere else.
 */
 :root {
-  --starter-banner: block; /* DELETE this line once the tokens come from DESIGN.md */
+  color-scheme: light;
 
-  /* Colours: 5-6 named roles. One dominant, one accent. */
-  --color-bg: #f2f2f2;
-  --color-surface: #ffffff;
-  --color-ink: #1c1c1c;
-  --color-muted: #666666;
-  --color-primary: #333333;
-  --color-accent: #888888;
-  --color-line: #d4d4d4;
-  --color-danger: #9a2a2a;
+  /* ---------- §2 Colours ---------- */
+  --bg: linear-gradient(160deg, #8fb2f5 0%, #9dadf2 55%, #a9a8ee 100%);
+  --bg-end: #a9a8ee; /* the gradient's last colour, painted under it so overscroll never shows white */
+  --surface: #ffffff38; /* the form card */
+  --surface-grid: #ffffff30; /* the schedule background */
+  --surface-2: #ffffffb0; /* inputs, lists, chips */
+  --pill: #ffffff80; /* unselected pill */
+  --ink: #1a2552; /* main text, all text on course colours */
+  --ink-2: #283666; /* secondary text on the background only */
+  --primary: #3f5bd8;
+  --primary-shadow: #2b3fa3;
+  --on-primary: #ffffff;
+  --secondary: #b9cbf8;
+  --secondary-shadow: #7f95d6;
+  --highlight: #ffffff; /* «بكرة» sessions and their column title only */
+  --mint: #7fd8be; /* success only */
+  --warn: #d98b84; /* «الوقت ما يكفي» only */
+  --warn-shadow: #b86c66;
+  --error-bg: #f4d5d2;
+  --error-ink: #8e3a34;
+  --hours-bg: #ffffff66;
+  --hours-ink: #2a3a9a;
+  --disabled-bg: #c9d3f0;
+  --disabled-ink: #6a77a3;
+  --overlay: #1a255255;
+  --modal: #eef2ff;
+  --loader: #8fb2f5cc;
 
-  /* Type: a display font and a body font. The body font must support Arabic.
-     Default body: Noto Sans Arabic (alternatives: Tajawal, Cairo, Readex Pro, Almarai).
-     Before you switch, type «حتى» and «على» in the new font: some fonts draw «حتى» like «حق». */
-  --font-display: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
-  --font-body: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
-  --text-h1: 32px;
-  --text-h2: 22px;
-  --text-body: 16px;
-  --text-caption: 13px;
+  /* Course colours, fixed per course in the order they were added (max 6). */
+  --c1: #8fa3d6;
+  --c2: #a29cd3;
+  --c3: #8db6c4;
+  --c4: #9dbfa8;
+  --c5: #d3afa0;
+  --c6: #c9bc95;
+
+  /* Component colours that DESIGN.md §5–6 gives as raw values. */
+  --doodle-stroke: #ffffff; /* §5 background drawings */
+  --drop-bg: #ffffff60; /* §6 drop zone */
+  --drop-border: #ffffffcc;
+  --close-bg: #ffffff99; /* §6 ✕ button */
+  --close-bg-hover: #ffffff;
+  --break-border: #ffffff99; /* §6 break session */
+  --tomorrow-head-bg: #ffffffb3; /* §6 «بكرة» column title */
+  --tomorrow-glow: #ffffffaa; /* §6 «بكرة» session glow */
+  --tomorrow-light: #ffffff8c; /* §7 the glow over the «بكرة» column */
+
+  /* ---------- §3 Typography: 4 sizes only ---------- */
+  --font-display: 'Baloo Bhaijaan 2', 'Tajawal', system-ui, sans-serif; /* titles, buttons, pills */
+  --font-body: 'Tajawal', 'Baloo Bhaijaan 2', system-ui, sans-serif; /* text, inputs, labels */
+  --text-title: 32px; /* screen title */
+  --text-lg: 20px; /* course name, «بكرة», the week */
+  --text-md: 16px; /* text, buttons, inputs, labels */
+  --text-sm: 13px; /* errors, files, sessions, times, tooltip */
+  --leading-title: 1.1;
+  --leading-lg: 1.3;
+  --leading-md: 1.55;
+  --leading-sm: 1.5;
   --weight-regular: 400;
+  --weight-medium: 500;
   --weight-bold: 700;
-  --leading-tight: 1.35;
-  --leading-body: 1.75;
+  --weight-heavy: 800;
 
-  /* Spacing scale: use only these steps. */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
+  /* ---------- §4 Spacing, radius, shadow ---------- */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 48px;
+  --space-card-gap: 12px; /* between course cards; also the schedule padding */
+  --content-max: 1100px;
+  --content-padding: clamp(20px, 4vw, 44px) max(4vw, 16px) 60px;
+  --course-card-padding: 16px 24px;
+  --grid-gap: 8px;
+  --grid-padding: 12px;
+  --grid-time-col: 64px;
+  --grid-day-min: 110px;
 
-  /* Shape */
-  --radius: 8px;
-  --border-width: 1px;
-  --shadow: none;
+  --radius-lg: 24px; /* buttons, cards, course card, schedule, modal */
+  --radius-warn: 18px; /* warning banner */
+  --radius-md: 16px; /* inputs, lists, tooltip, success banner, drop zone */
+  --radius-sm: 14px; /* sessions, hours badge, chips */
+  --radius-xs: 12px; /* error messages */
 
-  /* Layout */
-  --tap: 44px;          /* minimum touch target */
-  --content-max: 1120px;
+  --shadow-btn-primary: 0 6px 0 var(--primary-shadow);
+  --shadow-btn-secondary: 0 6px 0 var(--secondary-shadow);
+  --shadow-pill: 0 4px 0 var(--primary-shadow);
+  --shadow-warn: 0 5px 0 var(--warn-shadow);
+  --shadow-course: 0 8px 20px #3a447a22;
+  --shadow-tooltip: 0 10px 30px #1a255333;
 
-  /* Motion */
-  --dur-fast: 150ms;
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* ---------- Sizes ---------- */
+  --tap: 44px; /* smallest touch target */
+  --btn-height: 48px;
+  --btn-padding: 12px 26px;
+  --input-height: 46px;
+  --drop-height: 56px;
+  --session-height: 58px;
+  --border: 2px;
+  --outline: 3px;
+  --tomorrow-stripe: 8px;
+  --error-padding: 3px 12px;
+  --modal-width: 440px;
+  --tooltip-width: 240px;
+  --spinner-sm: 18px;
+  --spinner-lg: 64px;
+  --spinner-lg-border: 7px;
+  --bar-height: 12px;
+  --label-width: 170px; /* form labels beside their field (prototype.html) */
+  --lead-width: 620px; /* the Home sentence */
+  --step-dot: 28px; /* the numbered circles on Home */
+  --check-dot: 26px; /* the mint ✓ circle on a new course card */
+  --icon: 18px;
+  --doodle-w: 110px;
+  --doodle-h: 85px;
+  --doodle-stroke-width: 3.5;
+  --doodle-opacity: 0.16;
+
+  /* ---------- §7 Motion ---------- */
+  --dur-screen: 0.35s;
+  --dur-press: 0.12s;
+  --dur-pop: 0.5s;
+  --dur-glow: 1.4s;
+  --delay-glow: 350ms;
+  --ease: ease;
 }

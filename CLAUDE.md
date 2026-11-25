@@ -5,7 +5,7 @@
 The app reads their chapter PDFs on the device, estimates a study-hours range per chapter with a reason,
 and builds a weekly study schedule up to the last exam.
 
-**Source of truth, in this order:** `AGENT_BRIEF.md` → `PRD.md` → `HANDOFF.md` → `DESIGN.md` → `mock.json`.
+**Source of truth, in this order:** `AGENT_BRIEF.md` → `PRD.md` → `HANDOFF.md` → `DESIGN.md` → `web/src/data/mock.json`.
 `prototype.html` is the visual and behaviour reference (its estimate is fake). When the mockup images
 differ from DESIGN.md, DESIGN.md and the latest `prototype.html` win. Items marked [?] in HANDOFF.md: ask me.
 
@@ -81,7 +81,6 @@ sdaia-project/
 ├── PRD.md               # product scope
 ├── HANDOFF.md           # screens, paths, data, actions, rules, exact state texts (§8)
 ├── DESIGN.md            # design system (wins over the prototype)
-├── mock.json            # sample data (moves to web/src/data/ when the screens are built)
 ├── prototype.html       # visual + behaviour reference
 ├── design/              # refs/, wireframes.md, mockups/, shots/
 ├── example/             # camp reference example, read-only
@@ -90,16 +89,19 @@ sdaia-project/
     ├── index.html       # <html lang="ar" dir="rtl">
     └── src/
         ├── main.jsx     # entry point
-        ├── App.jsx      # hash routing + app state provider
+        ├── App.jsx      # background + app state provider + screen switch
+        ├── routes.js    # the hash router (#/, #/courses, ...)
+        ├── state.jsx    # useReducer + one Context, saved with lib/storage.js
         ├── base.css     # resets and base styles (tokens only)
         ├── tokens.css   # the ONLY place for design tokens
-        ├── components/  # Button, Input, Select, Pill, FileChip, Card, Badge, Banner, Modal, Session
+        ├── components/  # Button, Field (Input, Select), Pills, Upload, Cards, Modal, Session, Icon, Doodles
+        ├── dev/         # TEMPORARY components page (#/components)
         ├── features/
         │   ├── courses/   # screens 1–3: home, course entry, course list + preferences popup
         │   ├── estimate/  # estimate.js (5 factors → range + reason) + tests
         │   └── schedule/  # screen 4 + schedule.js (week calendar) + tests
-        ├── lib/         # pdf.js, storage.js, format.js, strings.js (shared code)
-        └── data/        # mock.json
+        ├── lib/         # pdf.js, storage.js, format.js, strings.js, options.js (shared code)
+        └── data/        # mock.json: sample data for tests and the demo
 ```
 The starter's `src/screens/` is replaced by `features/` as each screen is built.
 
@@ -153,7 +155,7 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
   Arabic-Indic ١٢٣ in the UI, 0-9 only in code, never zero-pad, decimal «٫», range «١٧–٢٣»;
   no middle dot (U+00B7) next to a number, use «،».
 - Reusable components (button, input, select, card, session, modal...) so later screens reuse them.
-- `mock.json` is only for building and testing the UI. No backend, no real API calls.
+- `web/src/data/mock.json` is only for tests and the «جرّب ببيانات تجريبية» demo. No backend, no real API calls.
 - One screen per task, including its states from HANDOFF.md §4 with the exact texts from §8.
   Do not touch other screens, routing or tokens unless I ask.
 - Design files live in `design/`: `refs/`, `wireframes.md`, `mockups/`, `shots/`.

@@ -1,0 +1,46 @@
+/* TEMPORARY: layout of the components page only. Tokens only. */
+.dev-section {
+  margin-block: var(--space-4);
+}
+.dev-section > h2 {
+  margin-block-end: var(--space-card-gap);
+}
+.dev-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+}
+.dev-stack {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+.dev-item {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+.dev-item figcaption {
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+/* The sessions sit on the schedule background, as they will in the calendar. */
+.dev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-day-min), 1fr));
+  gap: var(--grid-gap);
+  padding: var(--grid-padding);
+  border-radius: var(--radius-lg);
+  background: var(--surface-grid);
+}
+.dev-grid .dev-item {
+  align-content: start;
+  justify-items: stretch;
+  text-align: center;
+}
+.dev-grid .session {
+  min-height: 110px;
+}

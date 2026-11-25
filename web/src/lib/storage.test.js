@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import mock from '../../../mock.json';
+import mock from '../data/mock.json';
 import { STORAGE_KEY, clearData, emptyData, loadData, saveData } from './storage.js';
 
 // A stand-in for the browser's localStorage (Node has none).

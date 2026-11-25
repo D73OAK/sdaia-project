@@ -1,0 +1,534 @@
+/*
+  components.css: the reusable components (DESIGN.md §6). Tokens only (tokens.css): no hex colours and
+  no px font sizes here. Logical properties only (inline = across the line, block = down the page).
+*/
+
+.icon {
+  flex: none;
+}
+
+/* Keeps a short group like «(١ س ٢٠ د)» on one line. */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ---------- Button ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--btn-height);
+  padding: var(--btn-padding);
+  border: 0;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform var(--dur-press),
+    box-shadow var(--dur-press),
+    filter var(--dur-press);
+}
+.btn--primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: var(--shadow-btn-primary);
+}
+.btn--secondary {
+  background: var(--secondary);
+  color: var(--ink);
+  box-shadow: var(--shadow-btn-secondary);
+}
+/* hover: rise 2px, shadow 8px, a little brighter. (.is-hover / .is-pressed: components page only.) */
+.btn--primary:hover:not(:disabled),
+.btn--primary.is-hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 var(--primary-shadow);
+  filter: brightness(1.06);
+}
+.btn--secondary:hover:not(:disabled),
+.btn--secondary.is-hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 var(--secondary-shadow);
+  filter: brightness(1.06);
+}
+/* pressed: sink 5px, shadow 1px. */
+.btn--primary:active:not(:disabled),
+.btn--primary.is-pressed {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 var(--primary-shadow);
+}
+.btn--secondary:active:not(:disabled),
+.btn--secondary.is-pressed {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 var(--secondary-shadow);
+}
+.btn--loading {
+  cursor: progress;
+}
+.btn--done {
+  background: var(--mint);
+  color: var(--ink);
+  box-shadow: none;
+}
+.btn:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-ink);
+  box-shadow: none;
+  transform: none;
+  filter: none;
+  cursor: not-allowed;
+}
+/* A link-looking button: no background, underlined, --ink-2, still 44px tall for fingers. */
+.btn--link {
+  min-height: var(--tap);
+  padding-block: 0;
+  padding-inline: var(--space-1);
+  background: none;
+  box-shadow: none;
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+}
+/* The dark button inside the warning banner («غيّر ساعاتي»). */
+.btn--dark {
+  min-height: var(--tap);
+  padding-block: 0;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--ink);
+  color: var(--on-primary);
+}
+
+.spinner {
+  inline-size: var(--spinner-sm);
+  block-size: var(--spinner-sm);
+  border: var(--border) solid var(--on-primary);
+  border-block-start-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The round ✕ button (44px). */
+.close-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  border: 0;
+  border-radius: 50%;
+  background: var(--close-bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+.close-btn:hover {
+  background: var(--close-bg-hover);
+}
+
+/* ---------- Fields ---------- */
+.field {
+  display: grid;
+  grid-template-columns: var(--label-width) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-2);
+  align-items: start;
+  margin-block: var(--space-2);
+}
+.field__label {
+  padding-block-start: 0.6em; /* lines the label up with the middle of a 46px field */
+  font-weight: var(--weight-bold);
+}
+.field__hint {
+  font-weight: var(--weight-medium);
+}
+.field__control {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+}
+.field__control > .input {
+  inline-size: 100%;
+}
+
+.input {
+  min-height: var(--input-height);
+  padding-block: 0;
+  padding-inline: var(--space-2);
+  border: var(--border) solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+}
+.input::placeholder {
+  color: var(--ink-2);
+  opacity: 0.7;
+}
+.input:focus,
+.input.is-focus {
+  border-color: var(--primary);
+  outline: none;
+}
+.input.is-error {
+  border-color: var(--warn);
+}
+.select {
+  cursor: pointer;
+}
+
+.error-msg {
+  max-inline-size: 100%;
+  padding: var(--error-padding);
+  border-radius: var(--radius-xs);
+  background: var(--error-bg);
+  color: var(--error-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-sm);
+}
+
+/* On narrow screens the label goes above its field. */
+@media (max-width: 600px) {
+  .field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .field__label {
+    padding-block-start: 0;
+  }
+}
+
+/* ---------- Pills (level) ---------- */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.pill {
+  min-height: var(--tap);
+  padding-block: 0;
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--pill);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.pill.is-on {
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: var(--shadow-pill);
+}
+
+/* ---------- Upload zone and file chips ---------- */
+.drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-height: var(--drop-height);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border) dashed var(--drop-border);
+  border-radius: var(--radius-md);
+  background: var(--drop-bg);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  cursor: pointer;
+}
+.drop:hover {
+  background: var(--pill);
+}
+/* The real file input is hidden; show its keyboard focus on the zone. */
+.field__control:has(input[type='file']:focus-visible) .drop {
+  outline: var(--outline) solid var(--primary);
+  outline-offset: 2px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-card-gap);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--text-sm);
+}
+.chip__remove {
+  background: transparent;
+}
+.chip--error {
+  flex-direction: column;
+  align-items: start;
+  padding: var(--space-1) var(--space-card-gap);
+  background: var(--error-bg);
+  color: var(--error-ink);
+}
+.chip__text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-bold);
+}
+.chip__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.chip__action {
+  min-height: var(--tap);
+  padding-inline: var(--space-card-gap);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  color: var(--error-ink);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  padding: clamp(var(--space-2), 3vw, var(--space-4));
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.course-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-card-gap);
+  padding: var(--course-card-padding);
+  border-radius: var(--radius-lg);
+  background: var(--course);
+  box-shadow: var(--shadow-course);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-lg);
+}
+.course-card + .course-card {
+  margin-block-start: var(--space-card-gap);
+}
+.course-card__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.course-card__check {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--check-dot);
+  block-size: var(--check-dot);
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--ink);
+}
+.course-card.is-new {
+  animation: pop var(--dur-pop) var(--ease);
+}
+@keyframes pop {
+  from {
+    transform: scale(0.97);
+    box-shadow: 0 0 0 var(--outline) var(--mint);
+  }
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: var(--space-card-gap);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-md);
+  white-space: nowrap;
+}
+.badge--hours {
+  background: var(--hours-bg);
+  color: var(--hours-ink);
+}
+.badge--exam {
+  background: var(--error-bg);
+  color: var(--error-ink);
+}
+.badge--success {
+  background: var(--mint);
+  color: var(--ink);
+}
+.badge--missing {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* ---------- Banners ---------- */
+.banner--warn {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  max-inline-size: var(--modal-width);
+  padding: var(--space-card-gap) var(--space-2);
+  border-radius: var(--radius-warn);
+  background: var(--warn);
+  color: var(--ink);
+  box-shadow: var(--shadow-warn);
+}
+.banner__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-bold);
+}
+.banner__body {
+  font-size: var(--text-sm);
+}
+.banner__action {
+  margin-block-start: 4px;
+}
+.banner--success {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--mint);
+  color: var(--ink);
+  font-weight: var(--weight-bold);
+}
+
+/* ---------- Modal ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  background: var(--overlay);
+}
+.modal__box {
+  inline-size: min(var(--modal-width), 100%);
+  max-block-size: 100%;
+  overflow: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--modal);
+  box-shadow: var(--shadow-tooltip);
+}
+.modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-card-gap);
+  margin-block-end: var(--space-card-gap);
+}
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-card-gap);
+  margin-block-start: var(--space-3);
+}
+
+/* ---------- Sessions (schedule cells) ---------- */
+.session {
+  display: flex;
+  flex-direction: column;
+  gap: var(--border); /* the schedule shows through between the parts of one session */
+  inline-size: 100%;
+  min-height: var(--session-height);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    transform var(--dur-press),
+    opacity var(--dur-press);
+}
+button.session:hover:not(.is-blocked) {
+  transform: translateY(-2px);
+}
+.session__part {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-basis: 0; /* with flex-grow = minutes, each part's height follows its time */
+  padding: var(--space-1) 10px;
+  background: var(--course);
+}
+.session__part.is-short {
+  padding-block: 2px;
+}
+.session__course {
+  font-weight: var(--weight-bold);
+}
+.session__label {
+  font-weight: var(--weight-regular);
+}
+/* «بكرة»: the whole card turns white and glows; each part keeps its course colour as a stripe. */
+.session.is-tomorrow {
+  box-shadow: 0 0 22px var(--tomorrow-glow);
+}
+.session.is-tomorrow .session__part {
+  background: var(--highlight);
+  border-inline-start: var(--tomorrow-stripe) solid var(--course);
+}
+.session.is-picked {
+  outline: var(--outline) solid var(--primary);
+  outline-offset: 2px;
+}
+.session.is-blocked {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.session--break,
+.session--exam {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--space-1);
+  text-align: center;
+  cursor: default;
+}
+.session--break {
+  border: var(--border) dashed var(--break-border);
+  color: var(--ink-2);
+  font-weight: var(--weight-medium);
+}
+.session--exam {
+  background: var(--error-bg);
+  color: var(--error-ink);
+  font-weight: var(--weight-bold);
+}

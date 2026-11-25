@@ -6,7 +6,7 @@ You are building **ميزان المذاكرة** (Study Scale), an Arabic RTL we
 1. `PRD.md`: the problem, the user, the scope, and what is out of scope.
 2. `HANDOFF.md`: the screens, the happy and unhappy paths, data, actions, rules, and the **exact Arabic state texts**. Items marked [?] are assumptions: ask before you decide them.
 3. `DESIGN.md`: tokens, type, components, motion, and the Arabic/RTL rules. **Follow it exactly. It wins over the prototype.**
-4. `mock.json`: realistic sample data. Use it for fixtures and tests.
+4. `web/src/data/mock.json`: realistic sample data. Use it for fixtures, tests and the demo.
 5. `prototype.html`: the working reference for the look, the flow, and the scheduling logic. Open it in a browser and click «جرّب ببيانات تجريبية». The estimate in it is **fake**: it is based on a hash of the file. You replace that with real PDF analysis.
 
 ## Hard rules

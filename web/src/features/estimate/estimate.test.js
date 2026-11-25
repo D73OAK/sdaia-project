@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-// The sample data at the repo root. It moves to web/src/data/mock.json when the screens are built.
-import mock from '../../../../mock.json';
+// The sample data (web/src/data/mock.json).
+import mock from '../../data/mock.json';
 import { courseTotal, densityOf, estimateChapter, roundHalf } from './estimate.js';
 
 describe('estimateChapter matches every chapter in mock.json', () => {

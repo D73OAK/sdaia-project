@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-// The sample data at the repo root (its plan was made with buildPlan; this test keeps the two in step).
-import mock from '../../../../mock.json';
+// The sample data (its plan was made with buildPlan; this test keeps the two in step).
+import mock from '../../data/mock.json';
 import {
   DEFAULT_PREFERENCES,
   addDays,

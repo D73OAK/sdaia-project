@@ -1,55 +1,51 @@
-import { useEffect, useState } from 'react';
-import Home from './screens/Home.jsx';
-import Detail from './screens/Detail.jsx';
-import Action from './screens/Action.jsx';
-import PdfTestPage from './features/estimate/PdfTestPage.jsx'; // TEMPORARY (Day 1), see the file
+// App.jsx: the background, the app state provider and the hash routing (routes.js).
+import Doodles from './components/Doodles.jsx';
+import Button from './components/Button.jsx';
+import HomeScreen from './features/courses/HomeScreen.jsx';
+import ComponentsPage from './dev/ComponentsPage.jsx'; // TEMPORARY
+import PdfTestPage from './features/estimate/PdfTestPage.jsx'; // TEMPORARY (Day 1)
+import { APP_NAME, COMMON, NOT_BUILT } from './lib/strings.js';
+import { ROUTES, go, useRoute } from './routes.js';
+import { AppProvider } from './state.jsx';
 
-// Three placeholder screens = your 3 key screens. Rename them to match design/wireframes.md.
-// Routing is a tiny hash switch (#/, #/detail/1, #/action): no library needed for 3 screens.
-const SCREENS = [
-  { path: '/', label: 'الرئيسية' },
-  { path: '/detail/1', label: 'التفاصيل' },
-  { path: '/action', label: 'الفعل الرئيسي' },
-];
+// Screens 2–4 are not built yet; their addresses show this instead of a blank page.
+function NotBuilt() {
+  return (
+    <section className="screen">
+      <div className="topbar">
+        <span />
+        <span className="topbar__app">{APP_NAME}</span>
+      </div>
+      <p>{NOT_BUILT}</p>
+      <Button variant="link" onClick={() => go(ROUTES.home)}>
+        {COMMON.back}
+      </Button>
+    </section>
+  );
+}
 
-function useHashPath() {
-  const read = () => window.location.hash.replace(/^#/, '') || '/';
-  const [path, setPath] = useState(read);
-  useEffect(() => {
-    const onChange = () => setPath(read());
-    window.addEventListener('hashchange', onChange);
-    return () => window.removeEventListener('hashchange', onChange);
-  }, []);
-  return path;
+function Screen({ path }) {
+  switch (path) {
+    case ROUTES.home:
+      return <HomeScreen />;
+    case ROUTES.components:
+      return <ComponentsPage />;
+    case ROUTES.pdfTest:
+      return <PdfTestPage />;
+    default:
+      return <NotBuilt />;
+  }
 }
 
 export default function App() {
-  const path = useHashPath();
-  const [, section, id] = path.split('/');
-
-  let screen = <Home />;
-  if (section === 'detail') screen = <Detail id={id} />;
-  if (section === 'action') screen = <Action />;
-  if (section === 'pdf-test') screen = <PdfTestPage />;
-
+  const path = useRoute();
   return (
-    <>
-      <div className="starter-banner">
-        هذا هيكل رمادي عن قصد. الشكل يجي من DESIGN.md حقك. (يختفي الشريط لما تعبّي tokens.css)
-      </div>
-      <div className="shell">
-        <nav className="nav" aria-label="الشاشات">
-          {SCREENS.map((s) => {
-            const current = s.path === '/' ? path === '/' : path.startsWith('/' + s.path.split('/')[1]);
-            return (
-              <a key={s.path} href={'#' + s.path} aria-current={current ? 'page' : undefined}>
-                {s.label}
-              </a>
-            );
-          })}
-        </nav>
-        <main>{screen}</main>
-      </div>
-    </>
+    <AppProvider>
+      <Doodles />
+      <main className="page">
+        {/* key = path: a new screen mounts fresh, so its entry motion plays. */}
+        <Screen key={path} path={path} />
+      </main>
+    </AppProvider>
   );
 }

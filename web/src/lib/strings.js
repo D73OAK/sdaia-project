@@ -90,6 +90,39 @@ export const COURSE_LIMIT = 'وصلت لـ٦ مواد، وهذا الحد في �
 // §8: preferences popup errors (used by screen 3).
 export const PREFS_ERROR = {
   out_of_range: 'فيه حقل فاضي أو رقم برا المدى. الساعات من ١ لين ١٤، والبريكات من ٠ لين ٦، ومدة البريك من ٥ لين ٩٠ دقيقة.',
+  // «الوقت ما يكفي المدى»: hours, breaks, needed hours, start, end, available hours (all already formatted)
+  span_too_short: (h, b, need, start, end, span) =>
+    `فيه مشكلة في الأرقام: ${h} ساعات مذاكرة مع ${b} بريك تحتاج ${need} ساعة، والمدى اللي حطيته من ${start} لين ${end} هو ${span} ساعة بس.`,
+  end_before_start: 'وقت النهاية لازم يكون بعد وقت البداية',
+};
+
+// Screen 3: the course list (texts from prototype.html; the empty text is §8).
+export const COURSE_LIST = {
+  title: 'موادك',
+  add: '+ إضافة مادة أخرى',
+  addFirst: '+ أضف أول مادة',
+  finish: 'خلصت، رتّب جدولي',
+  empty: 'ما أضفت ولا مادة. ابدأ بالمادة اللي اختبارها أقرب.', // §8
+};
+
+// Popup 3a: preferences (labels from prototype.html).
+export const PREFS = {
+  title: 'تفضيلات يومك',
+  hours: 'كم ساعة تذاكر في اليوم؟',
+  breaks: 'كم بريك تبي؟',
+  breakMinutes: 'مدة البريك (دقيقة):',
+  start: 'متى تبدأ تذاكر؟',
+  end: 'متى تخلص؟',
+  submit: 'اطلع جدولي',
+};
+
+// Popup 3b: not enough time (§8).
+export const SHORT = {
+  title: 'الوقت ما يكفي',
+  text: (need, perDay, have) =>
+    `موادك تحتاج تقريباً ${need} ساعة، وبـ${perDay} ساعات في اليوم تلحق ${have} ساعة بس قبل اختباراتك. تبي تزيد ساعات مذاكرتك عشان تكفي؟`,
+  more: 'ايه، أزيد ساعاتي',
+  keep: 'لا، اطلع الجدول كذا',
 };
 
 // Screens that are not built yet (temporary, until screens 2–4 exist).

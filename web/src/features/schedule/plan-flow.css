@@ -1,0 +1,15 @@
+/* Popup 3a: label on one side, a short field on the other (prototype.html). Tokens only. */
+.prefs .prefs__field {
+  grid-template-columns: minmax(0, 1fr) var(--prefs-number-width);
+  align-items: center;
+  margin-block: var(--space-card-gap);
+}
+.prefs .prefs__field--time {
+  grid-template-columns: minmax(0, 1fr) var(--prefs-time-width);
+}
+.prefs .field__label {
+  padding-block-start: 0;
+}
+.prefs > .error-msg {
+  margin-block-start: var(--space-1);
+}

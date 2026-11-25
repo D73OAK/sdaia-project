@@ -1,5 +1,6 @@
 // Form fields (DESIGN.md §6 Input / Select, Error message).
 // Each field has a visible label, and its error message sits under it, linked with aria-describedby.
+// `className` goes on the input itself, `fieldClassName` on the label + input row.
 import { toArabicDigits } from '../lib/format.js';
 
 export function ErrorMessage({ id, children }) {
@@ -13,11 +14,11 @@ export function ErrorMessage({ id, children }) {
 
 // Text input. `numeric` = a number field: type=text + inputmode=numeric, and 0-9 turn into ٠-٩ while typing.
 // Text fields get dir="auto" so an English course name is written left to right.
-export function Input({ id, label, error, numeric = false, value, onChange, className = '', ...rest }) {
+export function Input({ id, label, error, numeric = false, value, onChange, className = '', fieldClassName = '', ...rest }) {
   const errorId = error ? `${id}-error` : undefined;
   const handle = (e) => onChange?.(numeric ? toArabicDigits(e.target.value) : e.target.value);
   return (
-    <div className="field">
+    <div className={`field ${fieldClassName}`}>
       <label className="field__label" htmlFor={id}>
         {label}
       </label>
@@ -41,10 +42,10 @@ export function Input({ id, label, error, numeric = false, value, onChange, clas
 }
 
 // Select list. options: [{ value, label }]. `placeholder` adds an empty first choice («اختر اليوم»).
-export function Select({ id, label, error, options, placeholder, value, onChange, className = '', ...rest }) {
+export function Select({ id, label, error, options, placeholder, value, onChange, className = '', fieldClassName = '', ...rest }) {
   const errorId = error ? `${id}-error` : undefined;
   return (
-    <div className="field">
+    <div className={`field ${fieldClassName}`}>
       <label className="field__label" htmlFor={id}>
         {label}
       </label>

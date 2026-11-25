@@ -1,0 +1,28 @@
+/* Screen 3: the course list. Tokens only. */
+.course-list__cards {
+  display: grid;
+  gap: var(--space-card-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.course-list__empty {
+  padding: var(--space-3);
+  color: var(--ink-2);
+  text-align: center;
+}
+.course-list__full {
+  margin-block-start: var(--space-card-gap);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--pill);
+  font-weight: var(--weight-bold);
+}
+.course-list__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-card-gap);
+  margin-block-start: var(--space-3);
+}

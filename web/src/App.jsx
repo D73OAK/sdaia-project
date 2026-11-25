@@ -4,11 +4,12 @@ import Button from './components/Button.jsx';
 import HomeScreen from './features/courses/HomeScreen.jsx';
 import ComponentsPage from './dev/ComponentsPage.jsx'; // TEMPORARY
 import CourseEntryScreen from './features/courses/CourseEntryScreen.jsx';
+import CourseListScreen from './features/courses/CourseListScreen.jsx';
 import { APP_NAME, COMMON, NOT_BUILT } from './lib/strings.js';
 import { ROUTES, go, useRoute } from './routes.js';
 import { AppProvider } from './state.jsx';
 
-// Screens 3–4 are not built yet; their addresses show this instead of a blank page.
+// Screen 4 is not built yet; their addresses show this instead of a blank page.
 function NotBuilt() {
   return (
     <section className="screen">
@@ -30,6 +31,8 @@ function Screen({ path }) {
       return <HomeScreen />;
     case ROUTES.courseNew:
       return <CourseEntryScreen />;
+    case ROUTES.courses:
+      return <CourseListScreen />;
     case ROUTES.components:
       return <ComponentsPage />;
     default:

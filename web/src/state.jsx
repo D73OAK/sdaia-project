@@ -15,6 +15,10 @@ export function reducer(state, action) {
       if (!canAddCourse(state.courses)) return state;
       // A new course changes what the schedule needs, so the old plan is dropped.
       return { ...state, courses: [...state.courses, action.course], plan: null, lastAddedId: action.course.id };
+    case 'seenNew': // the course list has shown the ✓ for the new course
+      return state.lastAddedId ? { ...state, lastAddedId: null } : state;
+    case 'setPlan': // «اطلع جدولي»: the preferences and the plan built from them
+      return { ...state, preferences: action.preferences, plan: action.plan };
     case 'restart': // «ابدأ من جديد», after the student confirms
       return emptyData();
     default:

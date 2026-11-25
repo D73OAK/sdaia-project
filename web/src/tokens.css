@@ -116,6 +116,8 @@
   --label-width: 170px; /* form labels beside their field (prototype.html) */
   --lead-width: 620px; /* the Home sentence */
   --select-width: 280px; /* the exam date list (prototype.html) */
+  --prefs-number-width: 90px; /* number fields in the preferences popup (prototype.html) */
+  --prefs-time-width: 140px; /* time lists in the preferences popup (prototype.html) */
   --step-dot: 28px; /* the numbered circles on Home */
   --check-dot: 26px; /* the mint ✓ circle on a new course card */
   --icon: 18px;

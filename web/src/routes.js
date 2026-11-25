@@ -8,7 +8,6 @@ export const ROUTES = {
   courseEdit: (id) => `/course/edit/${id}`, // screen 2 in edit mode
   courses: '/courses', // screen 3
   schedule: '/schedule', // screen 4
-  components: '/components', // temporary components page
 };
 
 const read = () => window.location.hash.replace(/^#/, '') || '/';

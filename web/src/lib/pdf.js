@@ -31,7 +31,16 @@ export const countWords = (line) => line.split(/\s+/).filter((w) => /[\p{L}\p{N}
 
 export const isEquationLine = (line) => MATH_SYMBOLS.test(line) || FRACTION.test(line);
 
-export const isExerciseHeading = (line) => EXERCISE_HEADING.test(line.trim());
+// Arabic text from many PDFs (Chrome, Word …) comes out of pdf.js as presentation forms (ﻣ ﺜ ﺎ ﻝ) in
+// visual order, so «مثال ١: …» reads «… :1 لاثم». NFKC turns the shapes back into letters, the Persian
+// ی/ک become the Arabic ي/ك, and for a line with Arabic the reversed line is tried too.
+const ARABIC = /[؀-ۿ]/;
+const normalizeArabic = (text) => text.normalize('NFKC').replace(/ی/g, 'ي').replace(/ک/g, 'ك');
+export function isExerciseHeading(line) {
+  const t = normalizeArabic(line).trim();
+  if (EXERCISE_HEADING.test(t)) return true;
+  return ARABIC.test(t) && EXERCISE_HEADING.test([...t].reverse().join('').trim());
+}
 
 // Turns PDF.js text items for one page into trimmed text lines.
 // A new line starts when PDF.js marks an end of line, or when the text moves to another height.

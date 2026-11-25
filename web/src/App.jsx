@@ -4,7 +4,6 @@ import HomeScreen from './features/courses/HomeScreen.jsx';
 import CourseEntryScreen from './features/courses/CourseEntryScreen.jsx';
 import CourseListScreen from './features/courses/CourseListScreen.jsx';
 import ScheduleScreen from './features/schedule/ScheduleScreen.jsx';
-import ComponentsPage from './dev/ComponentsPage.jsx'; // TEMPORARY
 import { ROUTES, useRoute } from './routes.js';
 import { AppProvider } from './state.jsx';
 
@@ -18,8 +17,6 @@ function Screen({ path }) {
       return <CourseListScreen />;
     case ROUTES.schedule:
       return <ScheduleScreen />;
-    case ROUTES.components:
-      return <ComponentsPage />;
     default: // '/' and any unknown address
       return <HomeScreen />;
   }

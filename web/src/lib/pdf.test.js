@@ -84,6 +84,12 @@ describe('isExerciseHeading', () => {
     expect(isExerciseHeading('المثال ٢:')).toBe(true);
     expect(isExerciseHeading('سؤال')).toBe(true);
   });
+  it('finds Arabic headings the way many PDFs store them: letter shapes, reversed order, Persian ی', () => {
+    expect(isExerciseHeading('ﻣﺜﺎﻝ ٢')).toBe(true); // «مثال ٢» as presentation forms
+    expect(isExerciseHeading('ةفوفصملا :1 لاثم')).toBe(true); // «مثال 1: المصفوفة» in visual order
+    expect(isExerciseHeading('تمرین ٣')).toBe(true); // Persian ی
+    expect(isExerciseHeading('ءاضفلا يف لاثملا اذه')).toBe(false); // «هذا المثال في الفضاء»: not a heading
+  });
   it('ignores the words in the middle of a sentence or inside other words', () => {
     expect(isExerciseHeading('This is an example of a stack')).toBe(false);
     expect(isExerciseHeading('Examination rules')).toBe(false);

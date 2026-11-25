@@ -96,7 +96,6 @@ sdaia-project/
         ├── base.css     # resets and base styles (tokens only)
         ├── tokens.css   # the ONLY place for design tokens
         ├── components/  # Button, Field (Input, Select), Pills, Upload, Cards, Modal, Session, Icon, Doodles
-        ├── dev/         # TEMPORARY components page (#/components)
         ├── features/
         │   ├── courses/   # screens 1–3: home, course entry, course list + preferences popup
         │   ├── estimate/  # estimate.js (5 factors → range + reason) + tests

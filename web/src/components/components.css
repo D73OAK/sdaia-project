@@ -654,3 +654,19 @@ button.session:hover:not(.is-blocked) {
   color: var(--error-ink);
   font-weight: var(--weight-bold);
 }
+
+/* Short screens (a phone in landscape): tighter popups, so less has to scroll inside them. */
+@media (max-height: 500px) {
+  .modal {
+    padding: var(--space-1);
+  }
+  .modal__box {
+    padding: var(--space-2);
+  }
+  .modal__head {
+    margin-block-end: var(--space-1);
+  }
+  .modal__actions {
+    margin-block-start: var(--space-2);
+  }
+}

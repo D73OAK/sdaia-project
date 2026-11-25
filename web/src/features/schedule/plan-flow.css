@@ -13,3 +13,8 @@
 .prefs > .error-msg {
   margin-block-start: var(--space-1);
 }
+@media (max-height: 500px) {
+  .prefs .prefs__field {
+    margin-block: var(--space-1);
+  }
+}

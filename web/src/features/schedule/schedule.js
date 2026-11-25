@@ -133,18 +133,24 @@ function partMinutes(fileLeft, sessionLeft) {
 //   days      [{ date, exams: [courseId], sessions: [{ slot, parts: [{ chapterId, hours }] }] }]
 //             from tomorrow to the last exam; a session with nothing to study is left out
 //   leftover  [{ chapterId, missingHours }] for files that did not fit (the «ما لحقنا لها وقت» list)
-//   needHours the sum of hiHours of all usable files; haveHours the part that fits
-export function buildPlan(courses, prefs, today) {
+//   needHours the hours all files still need; haveHours the part that fits
+// minutesLeft(chapter): how many minutes a file still needs (progress.js, HANDOFF.md §7 rules 16–17).
+// By default a file needs its full hiHours. Files that need nothing and courses whose exam is today or
+// earlier are left out.
+export function buildPlan(courses, prefs, today, minutesLeft = (ch) => ch.estimate.hiHours * 60) {
   const blocks = makeBlocks(prefs);
   const sessionsPerDay = prefs.breaks + 1;
   const sessionMinutes = (prefs.hoursPerDay * 60) / sessionsPerDay;
 
   // Nearest exam first; two exams on the same day keep the order the courses were added in.
   const queue = [...courses]
+    .filter((course) => course.examDate > today)
     .sort((a, b) => (a.examDate < b.examDate ? -1 : a.examDate > b.examDate ? 1 : a.order - b.order))
     .map((course) => ({
       course,
-      files: studyOrder(course).map((ch) => ({ id: ch.id, left: ch.estimate.hiHours * 60 })),
+      files: studyOrder(course)
+        .map((ch) => ({ id: ch.id, left: minutesLeft(ch) }))
+        .filter((f) => f.left > EPSILON),
     }));
   const needMinutes = queue.reduce((sum, q) => sum + q.files.reduce((s, f) => s + f.left, 0), 0);
 

@@ -132,3 +132,59 @@
   font-family: var(--font-display);
   font-weight: var(--weight-bold);
 }
+
+/* ---------- popup 4b «وش خلصت من الشابترات؟» ---------- */
+.reschedule__hint {
+  margin-block-end: var(--space-card-gap);
+}
+.reschedule__course {
+  margin: 0 0 var(--space-card-gap);
+  padding: 0;
+  border: 0;
+}
+.reschedule__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+}
+.reschedule__dot {
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
+  border-radius: 50%;
+  background: var(--course);
+}
+.reschedule__files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block-start: var(--space-1);
+}
+/* A checkbox with a 44px touch target. */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--tap);
+  padding-inline: var(--space-card-gap);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+.check input {
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.check:has(input:checked) {
+  background: var(--course);
+}
+.check:has(input:focus-visible) {
+  outline: var(--outline) solid var(--primary);
+  outline-offset: 2px;
+}

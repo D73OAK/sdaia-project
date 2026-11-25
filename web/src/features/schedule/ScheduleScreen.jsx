@@ -1,7 +1,9 @@
 // Screen 4: the schedule (HANDOFF.md §2). SEE FIRST: tomorrow's sessions.
 // Top: the warning (with «غيّر ساعاتي») or the success banner. Then the week navigation, the tools,
-// the week grid, the reason tooltip and the «ما لحقنا لها وقت» list. Empty state when every exam is tomorrow.
-// Swap sessions and «حمّل جدولك PDF» come later (Day 4): the tools row has room for them.
+// the week grid, the reason tooltip and the «ما لحقنا لها وقت» list. Empty state when no study day is left,
+// and an «all finished» state when every file is done.
+// The schedule always starts tomorrow: days before it count as studied (§7 rule 16). «رتّب جدولي من جديد»
+// opens popup 4b to tick finished files and plan the rest (§7 rule 17). Swap sessions comes later.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '../../components/Button.jsx';
 import { Badge, Card, SuccessBanner, WarningBanner } from '../../components/Cards.jsx';
@@ -9,10 +11,12 @@ import Modal from '../../components/Modal.jsx';
 import Tooltip from '../../components/Tooltip.jsx';
 import { fmtDayMonth, fmtHours, fmtNumber, fmtRange } from '../../lib/format.js';
 import { localToday } from '../../lib/options.js';
-import { APP_NAME, BADGE, BANNER, RESTART, SCHEDULE as T, TOOLTIP, fileLabel } from '../../lib/strings.js';
+import { APP_NAME, BADGE, BANNER, RESCHEDULE, RESTART, SCHEDULE as T, TOOLTIP, fileLabel } from '../../lib/strings.js';
 import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
 import PlanFlow from './PlanFlow.jsx';
+import RescheduleModal from './RescheduleModal.jsx';
+import { activeCourses, allFinished } from './progress.js';
 import { addDays } from './schedule.js';
 import { fileIndex, hasAnySession, weekCount, weekDays } from './view.js';
 import WeekGrid from './WeekGrid.jsx';
@@ -25,13 +29,15 @@ export default function ScheduleScreen() {
   const { plan, courses, preferences } = state;
   const [week, setWeek] = useState(0);
   const [tip, setTip] = useState(null); // { id, parts, el, rect }
-  const [planning, setPlanning] = useState(false);
+  const [flow, setFlow] = useState(null); // popups 3a/3b: null | 'prefs' | 'short'
+  const [rescheduling, setRescheduling] = useState(false);
   const [confirmRestart, setConfirmRestart] = useState(false);
   const index = useMemo(() => fileIndex(courses), [courses]);
   // A tap focuses the session (which opens its tooltip) and then clicks it. To know whether the tap
   // should open or close, remember at touch-down whether this session's tooltip was already open.
   const openAtPress = useRef(false);
-  const tomorrow = addDays(localToday(), 1);
+  const today = localToday();
+  const tomorrow = addDays(today, 1);
 
   // No plan yet (or the courses changed since): back to the list to make one, or Home when there are
   // no courses at all (for example right after «ابدأ من جديد»).
@@ -39,6 +45,8 @@ export default function ScheduleScreen() {
     if (!plan) go(courses.length ? ROUTES.courses : ROUTES.home);
   }, [plan, courses.length]);
   useEffect(() => setWeek(0), [plan]); // a new plan starts at its first week
+  // The app may stay open past midnight: count the days that passed whenever the schedule opens.
+  useEffect(() => dispatch({ type: 'settle', today }), [dispatch, today]);
 
   // The tooltip closes with Esc. When the page or the grid scrolls it follows its session (a tap also
   // scrolls the session into view, so closing on scroll would close it right away on a tablet).
@@ -59,7 +67,9 @@ export default function ScheduleScreen() {
 
   if (!plan) return null;
 
-  const empty = !hasAnySession(plan);
+  const done = allFinished(courses, state.progress, today); // every file finished: nothing left to plan
+  const empty = done || !hasAnySession(plan);
+  const canReschedule = Boolean(preferences) && activeCourses(courses, today).length > 0;
   const weeks = weekCount(plan);
   const days = weekDays(plan, week);
   const weekText = days.length ? T.weekLabel(fmtDayMonth(days[0].date), fmtDayMonth(days.at(-1).date)) : '';
@@ -93,7 +103,7 @@ export default function ScheduleScreen() {
               <WarningBanner
                 title={BANNER.warningTitle}
                 body={BANNER.warningBody(fmtHours(plan.needHours), fmtHours(plan.haveHours), fmtNumber(preferences.hoursPerDay))}
-                onChangeHours={() => setPlanning(true)}
+                onChangeHours={() => setFlow('prefs')}
               />
             ) : (
               <SuccessBanner>{BANNER.success}</SuccessBanner>
@@ -120,13 +130,25 @@ export default function ScheduleScreen() {
         <Button variant="secondary" onClick={() => go(ROUTES.courses)}>
           {T.backToCourses}
         </Button>
-        {/* Day 4: «بدّل بين جلستين» and «حمّل جدولك PDF» go here. */}
+        {canReschedule && (
+          <Button variant="secondary" onClick={() => setRescheduling(true)}>
+            {RESCHEDULE.button}
+          </Button>
+        )}
+        {/* Later: «بدّل بين جلستين» and «حمّل جدولك PDF» go here. */}
         <Button variant="link" onClick={() => setConfirmRestart(true)}>
           {T.restart}
         </Button>
       </div>
 
-      {empty ? (
+      {done ? (
+        <Card className="schedule__empty">
+          <h2>{RESCHEDULE.allDone}</h2>
+          <Button variant="secondary" onClick={() => go(ROUTES.courses)}>
+            {T.backToCourses}
+          </Button>
+        </Card>
+      ) : empty ? (
         <Card className="schedule__empty">
           <h2>{T.emptyTitle}</h2>
           <p>{T.emptyText}</p>
@@ -182,7 +204,16 @@ export default function ScheduleScreen() {
         </Tooltip>
       )}
 
-      {planning && <PlanFlow onClose={() => setPlanning(false)} />}
+      {flow && <PlanFlow startAt={flow} onClose={() => setFlow(null)} />}
+      {rescheduling && (
+        <RescheduleModal
+          onClose={() => setRescheduling(false)}
+          onDone={({ short }) => {
+            setRescheduling(false);
+            if (short) setFlow('short');
+          }}
+        />
+      )}
 
       <Modal
         open={confirmRestart}

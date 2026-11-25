@@ -11,7 +11,9 @@
 export const STORAGE_VERSION = 1;
 export const STORAGE_KEY = `mizan-study-scale:v${STORAGE_VERSION}`;
 
-export const emptyData = () => ({ courses: [], preferences: null, plan: null });
+// progress (HANDOFF.md §5): hours already studied per file and the files ticked as finished.
+export const emptyProgress = () => ({ studied: {}, finished: [] });
+export const emptyData = () => ({ courses: [], preferences: null, plan: null, progress: emptyProgress() });
 
 // The browser's localStorage, or null when there is none or it is blocked (reading it can throw).
 function browserStore() {
@@ -46,8 +48,20 @@ function cleanCourse(c) {
   };
 }
 
-export function cleanData({ courses, preferences, plan }) {
+// Progress keeps only numbers per file id and a list of file ids. Data saved before Version 4 has none:
+// it loads with empty progress (an addition, so the saved data stays valid and the version stays 1).
+function cleanProgress(p) {
+  if (!isObject(p)) return emptyProgress();
+  const studied = {};
+  if (isObject(p.studied))
+    for (const [id, h] of Object.entries(p.studied)) if (typeof h === 'number' && Number.isFinite(h)) studied[id] = h;
+  const finished = Array.isArray(p.finished) ? p.finished.filter((id) => typeof id === 'string') : [];
+  return { studied, finished };
+}
+
+export function cleanData({ courses, preferences, plan, progress }) {
   return {
+    progress: cleanProgress(progress),
     courses: Array.isArray(courses) ? courses.map(cleanCourse) : [],
     preferences: isObject(preferences)
       ? pick(preferences, ['hoursPerDay', 'breaks', 'breakMinutes', 'startTime', 'endTime'])

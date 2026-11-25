@@ -132,6 +132,15 @@ export const TOOLTIP = {
   level: (level) => `مستواك فيها: ${LEVEL_LABEL[level]}`,
 };
 
+// Popup 4b: reschedule from what was finished (HANDOFF.md §8, Version 4).
+export const RESCHEDULE = {
+  button: 'رتّب جدولي من جديد',
+  title: 'وش خلصت من الشابترات؟',
+  hint: 'علّم على اللي خلصته، ونرتّب لك الباقي من بكرة.',
+  submit: 'رتّب الباقي',
+  allDone: 'خلصت كل شابتراتك. بالتوفيق في اختباراتك!',
+};
+
 // Popup 3a: preferences (labels from prototype.html).
 export const PREFS = {
   title: 'تفضيلات يومك',

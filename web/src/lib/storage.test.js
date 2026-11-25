@@ -26,7 +26,12 @@ const brokenStore = {
 };
 
 const { _note, ...plan } = mock.plan;
-const data = { courses: mock.courses, preferences: mock.preferences, plan };
+const data = {
+  courses: mock.courses,
+  preferences: mock.preferences,
+  plan,
+  progress: { studied: { 'c1-ch1': 4.99 }, finished: ['c2-ch1'] },
+};
 
 describe('saveData + loadData', () => {
   it('gives back exactly what was saved', () => {
@@ -57,6 +62,19 @@ describe('saveData + loadData', () => {
     expect(raw).not.toContain('page one text');
     expect(raw).not.toContain('draftFiles');
     expect(loadData(store).courses[0]).toEqual(mock.courses[0]);
+  });
+});
+
+describe('saved data from before Version 4 (no progress)', () => {
+  it('still loads, with empty progress', () => {
+    const { progress, ...old } = data;
+    const store = fakeStore({ [STORAGE_KEY]: JSON.stringify({ version: 1, ...old }) });
+    expect(loadData(store)).toEqual({ ...old, progress: { studied: {}, finished: [] } });
+  });
+  it('drops anything in progress that is not a number per file or a file id', () => {
+    const store = fakeStore();
+    saveData({ ...data, progress: { studied: { a: 1, b: 'x' }, finished: ['c', 3], text: 'PDF words' } }, store);
+    expect(loadData(store).progress).toEqual({ studied: { a: 1 }, finished: ['c'] });
   });
 });
 

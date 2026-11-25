@@ -36,7 +36,8 @@ v1 decisions (approved 2026-11-24):
 - Swap sessions (a Should story): Day 4, after the PDF export, only if everything else works.
 
 Out of scope: accounts, login, cross-device sync; drag and drop; non-PDF files; reminders and notifications;
-sharing; progress tracking and stats; OCR; recording actual study time; success measurement; AI features.
+sharing; progress tracking and stats (except the light version approved for Version 4: past days count as
+studied, and «رتّب جدولي من جديد»); OCR; recording actual study time; success measurement; AI features.
 If I ask for something out of scope, say so before building it.
 
 ## Design

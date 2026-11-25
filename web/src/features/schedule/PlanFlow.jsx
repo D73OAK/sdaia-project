@@ -5,6 +5,8 @@
 //     - otherwise -> the schedule
 //   3b «ايه، أزيد ساعاتي» -> back to 3a with the same numbers; «لا، اطلع الجدول كذا» -> the schedule.
 //   ✕ or Esc closes without changing anything.
+// startAt="short" opens on popup 3b for a plan already saved (used by «رتّب الباقي»).
+// Every plan starts from what is left to study (progress.js, §7 rules 16–17).
 import { useState } from 'react';
 import Button from '../../components/Button.jsx';
 import { ErrorMessage, Input, Select } from '../../components/Field.jsx';
@@ -15,6 +17,7 @@ import { PREFS as T, PREFS_ERROR, SHORT } from '../../lib/strings.js';
 import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
 import { DEFAULT_PREFERENCES, buildPlan, validatePreferences } from './schedule.js';
+import { minutesLeft } from './progress.js';
 import { needsShortPopup } from './view.js';
 import './plan-flow.css';
 
@@ -50,11 +53,11 @@ function errorText(problem, prefs) {
   );
 }
 
-export default function PlanFlow({ onClose }) {
+export default function PlanFlow({ onClose, startAt = 'prefs' }) {
   const { state, dispatch } = useApp();
   const [form, setForm] = useState(() => toForm(state.preferences ?? DEFAULT_PREFERENCES));
   const [error, setError] = useState('');
-  const [stage, setStage] = useState('prefs'); // 'prefs' | 'short'
+  const [stage, setStage] = useState(startAt); // 'prefs' | 'short'
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
 
   function submit(e) {
@@ -66,7 +69,7 @@ export default function PlanFlow({ onClose }) {
       return;
     }
     setError('');
-    const plan = buildPlan(state.courses, prefs, localToday());
+    const plan = buildPlan(state.courses, prefs, localToday(), (ch) => minutesLeft(ch, state.progress));
     dispatch({ type: 'setPlan', preferences: prefs, plan });
     if (needsShortPopup(plan)) setStage('short');
     else openSchedule();

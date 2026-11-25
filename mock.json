@@ -273,7 +273,7 @@
   },
   "plan": {
     "needHours": 47.5,
-    "haveHours": 42.67,
+    "haveHours": 43.5,
     "blocks": [
       {
         "type": "session",
@@ -308,18 +308,30 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c1-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c1-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c1-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch1",
+                "hours": 1.33
+              }
+            ]
           }
         ]
       },
@@ -329,18 +341,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c1-ch1",
-            "hours": 1
+            "parts": [
+              {
+                "chapterId": "c1-ch1",
+                "hours": 1
+              },
+              {
+                "chapterId": "c1-ch2",
+                "hours": 0.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c1-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c1-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch2",
+                "hours": 1.33
+              }
+            ]
           }
         ]
       },
@@ -350,18 +378,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c1-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c1-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c1-ch2",
-            "hours": 1.17
+            "parts": [
+              {
+                "chapterId": "c1-ch2",
+                "hours": 0.83
+              },
+              {
+                "chapterId": "c1-ch3",
+                "hours": 0.5
+              }
+            ]
           }
         ]
       },
@@ -371,18 +415,30 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c1-ch3",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch3",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c1-ch3",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch3",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c1-ch3",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch3",
+                "hours": 1.33
+              }
+            ]
           }
         ]
       },
@@ -392,18 +448,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c1-ch3",
-            "hours": 1
+            "parts": [
+              {
+                "chapterId": "c1-ch3",
+                "hours": 0.5
+              },
+              {
+                "chapterId": "c1-ch4",
+                "hours": 0.83
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c1-ch4",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch4",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c1-ch4",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c1-ch4",
+                "hours": 1.33
+              }
+            ]
           }
         ]
       },
@@ -415,18 +487,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c2-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c2-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c2-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c2-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c2-ch1",
-            "hours": 0.83
+            "parts": [
+              {
+                "chapterId": "c2-ch1",
+                "hours": 0.83
+              },
+              {
+                "chapterId": "c2-ch2",
+                "hours": 0.5
+              }
+            ]
           }
         ]
       },
@@ -436,18 +524,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c2-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c2-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c2-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c2-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c2-ch2",
-            "hours": 0.83
+            "parts": [
+              {
+                "chapterId": "c2-ch2",
+                "hours": 0.33
+              },
+              {
+                "chapterId": "c3-ch1",
+                "hours": 1
+              }
+            ]
           }
         ]
       },
@@ -457,18 +561,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c3-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c3-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c3-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c3-ch1",
+                "hours": 0.67
+              },
+              {
+                "chapterId": "c3-ch2",
+                "hours": 0.67
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c3-ch1",
-            "hours": 0.33
+            "parts": [
+              {
+                "chapterId": "c3-ch2",
+                "hours": 1.33
+              }
+            ]
           }
         ]
       },
@@ -480,18 +600,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c3-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c3-ch3",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c3-ch2",
-            "hours": 0.67
+            "parts": [
+              {
+                "chapterId": "c3-ch3",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c3-ch3",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c3-ch3",
+                "hours": 0.83
+              },
+              {
+                "chapterId": "c4-ch1",
+                "hours": 0.5
+              }
+            ]
           }
         ]
       },
@@ -501,18 +637,34 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c3-ch3",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c4-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c3-ch3",
-            "hours": 0.83
+            "parts": [
+              {
+                "chapterId": "c4-ch1",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c4-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c4-ch1",
+                "hours": 0.83
+              },
+              {
+                "chapterId": "c4-ch2",
+                "hours": 0.5
+              }
+            ]
           }
         ]
       },
@@ -522,18 +674,30 @@
         "sessions": [
           {
             "slot": 0,
-            "chapterId": "c4-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c4-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 1,
-            "chapterId": "c4-ch1",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c4-ch2",
+                "hours": 1.33
+              }
+            ]
           },
           {
             "slot": 2,
-            "chapterId": "c4-ch2",
-            "hours": 1.33
+            "parts": [
+              {
+                "chapterId": "c4-ch2",
+                "hours": 0.83
+              }
+            ]
           }
         ]
       },
@@ -542,18 +706,7 @@
         "exams": [
           "c3"
         ],
-        "sessions": [
-          {
-            "slot": 0,
-            "chapterId": "c4-ch2",
-            "hours": 1.33
-          },
-          {
-            "slot": 1,
-            "chapterId": "c4-ch2",
-            "hours": 1.33
-          }
-        ]
+        "sessions": []
       },
       {
         "date": "2026-12-07",
@@ -571,9 +724,9 @@
     "leftover": [
       {
         "chapterId": "c1-ch4",
-        "missingHours": 4.83
+        "missingHours": 4
       }
     ],
-    "_note": "محسوب بـ buildPlan في web/src/features/schedule/schedule.js (Version 2). يوم ٣٠ نوفمبر يوم اختبار الرياضيات ١، وفيه جلسات الإحصاء لأن اختبارها بعده. ملف تمارين الرياضيات ١ يجي بعد شابتراتها، وما لحق منه ٤٫٨٣ س."
+    "_note": "محسوب بـ buildPlan في web/src/features/schedule/schedule.js (Version 2.1). كل جلسة قائمة أجزاء: إذا خلص ملف قبل نهاية الجلسة، الباقي يروح للملف اللي بعده إذا باقي ١٥ دقيقة أو أكثر. يوم ٣٠ نوفمبر يوم اختبار الرياضيات ١، وفيه جلسات الإحصاء لأن اختبارها بعده. ملف تمارين الرياضيات ١ يجي بعد شابتراتها، وما لحق منه ٤ س."
   }
 }

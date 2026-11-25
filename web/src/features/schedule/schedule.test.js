@@ -15,6 +15,8 @@ import {
 const { _note, ...mockPlan } = mock.plan;
 const plan = buildPlan(mock.courses, mock.preferences, mock.today);
 const courseOf = (chapterId) => mock.courses.find((c) => c.chapters.some((ch) => ch.id === chapterId));
+// Every part of every session, in time order, with its date.
+const partsOf = (p) => p.days.flatMap((d) => d.sessions.flatMap((s) => s.parts.map((x) => ({ date: d.date, ...x }))));
 
 // A small course for hand-made cases. hours = hiHours of each file.
 const course = (id, examDate, order, files) => ({
@@ -48,34 +50,42 @@ describe('buildPlan with mock.json', () => {
   });
 
   it('starts tomorrow with the course whose exam is nearest', () => {
-    expect(plan.days[0].sessions[0]).toEqual({ slot: 0, chapterId: 'c1-ch1', hours: 1.33 });
+    expect(plan.days[0].sessions[0]).toEqual({ slot: 0, parts: [{ chapterId: 'c1-ch1', hours: 1.33 }] });
   });
 
   it('never puts a session on or after its own course exam day', () => {
-    for (const day of plan.days) {
-      for (const s of day.sessions) expect(day.date < courseOf(s.chapterId).examDate).toBe(true);
-    }
+    for (const part of partsOf(plan)) expect(part.date < courseOf(part.chapterId).examDate).toBe(true);
   });
 
   it('keeps sessions of other courses on an exam day (the exam-day fix)', () => {
     const examDay = plan.days.find((d) => d.date === '2026-11-30');
     expect(examDay.exams).toEqual(['c1']);
     expect(examDay.sessions.length).toBeGreaterThan(0);
-    expect(examDay.sessions.every((s) => courseOf(s.chapterId).id === 'c2')).toBe(true);
+    expect(examDay.sessions.flatMap((s) => s.parts).every((x) => courseOf(x.chapterId).id === 'c2')).toBe(true);
   });
 
   it('studies all chapters of a course before its exercise file', () => {
-    const order = plan.days.flatMap((d) => d.sessions.map((s) => s.chapterId)).filter((id) => id.startsWith('c1-'));
+    const order = partsOf(plan).map((x) => x.chapterId).filter((id) => id.startsWith('c1-'));
     expect(order.indexOf('c1-ch4')).toBeGreaterThan(order.lastIndexOf('c1-ch3'));
   });
 
+  it('never makes a part shorter than 15 minutes', () => {
+    expect(Math.min(...partsOf(plan).map((x) => x.hours))).toBeGreaterThanOrEqual(0.25);
+  });
+
+  it('uses the rest of a session for the next file, even of the next course', () => {
+    const dec1 = plan.days.find((d) => d.date === '2026-12-01');
+    expect(dec1.sessions[2].parts.map((x) => x.chapterId)).toEqual(['c2-ch2', 'c3-ch1']);
+  });
+
   it('puts what does not fit in leftover, and the hours add up', () => {
-    expect(plan.leftover).toEqual([{ chapterId: 'c1-ch4', missingHours: 4.83 }]);
+    expect(plan.leftover).toEqual([{ chapterId: 'c1-ch4', missingHours: 4 }]);
     expect(plan.needHours).toBe(47.5); // the sum of every hiHours
-    // Each session's hours are rounded to 2 decimals (1.33), so their sum may drift by up to 0.01 per session.
-    const sessions = plan.days.flatMap((d) => d.sessions);
-    const scheduled = sessions.reduce((s, x) => s + x.hours, 0);
-    expect(Math.abs(scheduled - plan.haveHours)).toBeLessThanOrEqual(0.01 * sessions.length);
+    expect(plan.haveHours).toBe(43.5);
+    // Each part's hours are rounded to 2 decimals (1.33), so their sum may drift by up to 0.01 per part.
+    const parts = partsOf(plan);
+    const scheduled = parts.reduce((s, x) => s + x.hours, 0);
+    expect(Math.abs(scheduled - plan.haveHours)).toBeLessThanOrEqual(0.01 * parts.length);
     expect(plan.haveHours + plan.leftover[0].missingHours).toBeCloseTo(plan.needHours, 1);
   });
 });
@@ -88,7 +98,7 @@ describe('buildPlan with hand-made courses', () => {
       ['lecture', 1, 1],
     ]);
     const p = buildPlan([c], prefs(1), '2026-11-24');
-    expect(p.days.slice(0, 3).map((d) => d.sessions[0].chapterId)).toEqual(['a-2', 'a-1', 'a-0']);
+    expect(p.days.slice(0, 3).map((d) => d.sessions[0].parts[0].chapterId)).toEqual(['a-2', 'a-1', 'a-0']);
   });
 
   it('gives an exam day to the next course and lists every exam on it', () => {
@@ -98,7 +108,7 @@ describe('buildPlan with hand-made courses', () => {
     const p = buildPlan([a, b, c], prefs(2), '2026-11-24');
     expect(p.days.map((d) => d.date)).toEqual(['2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28']);
     expect(p.days[1].exams).toEqual(['a', 'b']);
-    expect(p.days[1].sessions).toEqual([{ slot: 0, chapterId: 'c-0', hours: 2 }]);
+    expect(p.days[1].sessions).toEqual([{ slot: 0, parts: [{ chapterId: 'c-0', hours: 2 }] }]);
   });
 
   it('makes an empty plan when every exam is tomorrow', () => {
@@ -122,6 +132,47 @@ describe('buildPlan with hand-made courses', () => {
       '2027-01-01',
       '2027-01-02',
     ]);
+  });
+});
+
+describe('parts: using the rest of a session', () => {
+  // 4 h a day with 2 breaks = three 80-minute sessions.
+  const eighty = { ...prefs(4, 2), breakMinutes: 10 };
+
+  it('a 1 h file in an 80 min session leaves 20 min for the next file', () => {
+    const a = course('a', '2026-11-27', 1, [['lecture', 1, 1], ['lecture', 2, 1]]);
+    const day = buildPlan([a], eighty, '2026-11-24').days[0];
+    expect(day.sessions[0].parts).toEqual([
+      { chapterId: 'a-0', hours: 1 },
+      { chapterId: 'a-1', hours: 0.33 },
+    ]);
+    expect(day.sessions[1].parts).toEqual([{ chapterId: 'a-1', hours: 0.67 }]);
+  });
+
+  it('holds up to three files in one session', () => {
+    const a = course('a', '2026-11-27', 1, [['lecture', 1, 0.5], ['lecture', 2, 0.5], ['lecture', 3, 0.5]]);
+    const day = buildPlan([a], eighty, '2026-11-24').days[0];
+    expect(day.sessions[0].parts.map((x) => x.chapterId)).toEqual(['a-0', 'a-1', 'a-2']);
+  });
+
+  it('never creates a part under 15 min: less than 15 min left in the session stays free', () => {
+    // 3.5 h with 2 breaks = three 70-minute sessions: a 1 h file leaves only 10 min.
+    const a = course('a', '2026-11-27', 1, [['lecture', 1, 1], ['lecture', 2, 1]]);
+    const day = buildPlan([a], { ...prefs(3.5, 2), breakMinutes: 10 }, '2026-11-24').days[0];
+    expect(day.sessions[0].parts).toEqual([{ chapterId: 'a-0', hours: 1 }]);
+    expect(day.sessions[1].parts).toEqual([{ chapterId: 'a-1', hours: 1 }]);
+  });
+
+  it('never creates a part under 15 min: no file is cut so that less than 15 min of it is left', () => {
+    // 20 min are free after the 1 h file, but taking 20 of the 30-min file would leave 10 min of it.
+    // So the session takes 15 min, and the last 15 min get their own part.
+    const a = course('a', '2026-11-27', 1, [['lecture', 1, 1], ['lecture', 2, 0.5]]);
+    const day = buildPlan([a], eighty, '2026-11-24').days[0];
+    expect(day.sessions[0].parts).toEqual([
+      { chapterId: 'a-0', hours: 1 },
+      { chapterId: 'a-1', hours: 0.25 },
+    ]);
+    expect(day.sessions[1].parts).toEqual([{ chapterId: 'a-1', hours: 0.25 }]);
   });
 });
 

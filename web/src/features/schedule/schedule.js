@@ -1,9 +1,11 @@
 // schedule.js: turns courses (with their estimates) and the daily preferences into a study plan.
 // Pure functions only (no React, no browser APIs), so they can be tested and moved to a server unchanged.
-// Ported from build() in prototype.html, with two changes:
+// Ported from build() in prototype.html, with three changes:
 //   1. Within a course, all chapter files come first (upload order), then all exercise files.
 //   2. An exam day is kept as a normal day: it lists the exams on it AND can hold sessions of other
 //      courses whose exams are later. (The prototype scheduled them but hid them behind the exam card.)
+//   3. A session is a list of parts: when a file ends early, the rest of the session goes to the next
+//      file if at least 15 minutes are left. (The prototype put one file per session and wasted the rest.)
 //
 // Dates are 'YYYY-MM-DD' strings, times are 'HH:MM' strings. `today` is passed in by the caller (the
 // device clock), so the same inputs always give the same plan. Inside, time is counted in minutes so
@@ -26,6 +28,9 @@ export const PREFERENCE_LIMITS = {
 };
 
 const EPSILON = 1e-6; // minutes; anything smaller counts as nothing left
+
+// No part of a session is ever shorter than this (HANDOFF.md §7 rule 9).
+export const MIN_PART_MINUTES = 15;
 
 // ---------- small helpers ----------
 
@@ -106,11 +111,27 @@ export function studyOrder(course) {
   ];
 }
 
-// Builds the plan (HANDOFF.md §7 rules 7–12). Each session gets ONE file: the next unfinished file of the
-// course whose exam is nearest and still after that day. A session never runs past a course's exam day.
+// How much of one file a part takes. Normally as much as fits: min(what the file needs, what the session
+// has left). Two guards keep every part at least MIN_PART_MINUTES long:
+//   - if taking that much would leave a tail shorter than the minimum, take less, so the tail is exactly
+//     the minimum (it then gets its own part later);
+//   - if the part itself would be shorter than the minimum, take nothing (returns 0).
+// Files are never shorter than 30 min (hiHours is at least 0.5), so a whole file is always long enough.
+function partMinutes(fileLeft, sessionLeft) {
+  let used = Math.min(fileLeft, sessionLeft);
+  const tail = fileLeft - used;
+  if (tail > EPSILON && tail < MIN_PART_MINUTES) used = fileLeft - MIN_PART_MINUTES;
+  return used >= MIN_PART_MINUTES - EPSILON ? used : 0;
+}
+
+// Builds the plan (HANDOFF.md §7 rules 7–12). Each session is filled with parts, in study order: the next
+// unfinished file of the course whose exam is nearest and still after that day. When a file finishes before
+// the session ends, the rest of the session goes to the next file (even of the next course), as long as at
+// least 15 minutes are left. So a session can hold two or three files. No part is ever shorter than 15 min.
 // Returns:
 //   blocks    the day shape (makeBlocks)
-//   days      [{ date, exams: [courseId], sessions: [{ slot, chapterId, hours }] }] from tomorrow to the last exam
+//   days      [{ date, exams: [courseId], sessions: [{ slot, parts: [{ chapterId, hours }] }] }]
+//             from tomorrow to the last exam; a session with nothing to study is left out
 //   leftover  [{ chapterId, missingHours }] for files that did not fit (the «ما لحقنا لها وقت» list)
 //   needHours the sum of hiHours of all usable files; haveHours the part that fits
 export function buildPlan(courses, prefs, today) {
@@ -133,12 +154,19 @@ export function buildPlan(courses, prefs, today) {
     const exams = courses.filter((c) => c.examDate === date).map((c) => c.id);
     const sessions = [];
     for (let slot = 0; slot < sessionsPerDay; slot++) {
-      const live = queue.find((q) => q.course.examDate > date && q.files.some((f) => f.left > EPSILON));
-      if (!live) continue; // nothing left that can still be studied before its exam
-      const file = live.files.find((f) => f.left > EPSILON);
-      const used = Math.min(file.left, sessionMinutes);
-      file.left -= used;
-      sessions.push({ slot, chapterId: file.id, hours: round2(used / 60) });
+      const parts = [];
+      let sessionLeft = sessionMinutes;
+      while (sessionLeft >= MIN_PART_MINUTES - EPSILON) {
+        const live = queue.find((q) => q.course.examDate > date && q.files.some((f) => f.left > EPSILON));
+        if (!live) break; // nothing left that can still be studied before its exam
+        const file = live.files.find((f) => f.left > EPSILON);
+        const used = partMinutes(file.left, sessionLeft);
+        if (!used) break; // what would fit is shorter than 15 min: leave the rest of the session free
+        file.left -= used;
+        sessionLeft -= used;
+        parts.push({ chapterId: file.id, hours: round2(used / 60) });
+      }
+      if (parts.length) sessions.push({ slot, parts });
     }
     days.push({ date, exams, sessions });
   }

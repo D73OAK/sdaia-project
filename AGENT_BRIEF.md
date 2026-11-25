@@ -41,6 +41,7 @@ hi   = round_to_half(lo * 1.4)
 - Days run from tomorrow up to the last exam. No sessions on or after a course's exam day.
 - Each day starts at the user's start time: session, break, session... There are `breaks + 1` sessions, each `hoursPerDay / (breaks+1)` long.
 - Fill each session with the remaining chapter of the course whose **exam is earliest** and still has a future exam date. Within a course, fill all its chapters first (upload order), then all its exercise files (upload order), all before its exam.
+- A session is a list of parts: when a file finishes before the session ends, the rest goes to the next file in that order if at least 15 minutes are left. No part is ever shorter than 15 minutes. Swapping moves a whole session with all its parts. (This replaces the prototype's one file per session.)
 - Anything left after that goes into «ما لحقنا لها وقت».
 - Validation before building: `hoursPerDay*60 + breaks*breakMin` must be ≤ `end - start`, and `end` must be after `start`. Otherwise, show the error message from HANDOFF.md §8.
 - If anything is left over, show the "not enough time" popup first (see DESIGN.md → states).

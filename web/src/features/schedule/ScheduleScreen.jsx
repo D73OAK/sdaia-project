@@ -3,7 +3,8 @@
 // the week grid, the reason tooltip and the «ما لحقنا لها وقت» list. Empty state when no study day is left,
 // and an «all finished» state when every file is done.
 // The schedule always starts tomorrow: days before it count as studied (§7 rule 16). «رتّب جدولي من جديد»
-// opens popup 4b to tick finished files and plan the rest (§7 rule 17). Swap sessions comes later.
+// opens popup 4b to tick finished files and plan the rest (§7 rule 17). «حمّل جدولك PDF» prints every week
+// still to come (PrintSchedule + print.css, §7 rule 15). Swap sessions comes later.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '../../components/Button.jsx';
 import { Badge, Card, SuccessBanner, WarningBanner } from '../../components/Cards.jsx';
@@ -11,11 +12,14 @@ import Modal from '../../components/Modal.jsx';
 import Tooltip from '../../components/Tooltip.jsx';
 import { fmtDayMonth, fmtHours, fmtNumber, fmtRange } from '../../lib/format.js';
 import { localToday } from '../../lib/options.js';
-import { APP_NAME, BADGE, BANNER, RESCHEDULE, RESTART, SCHEDULE as T, TOOLTIP, fileLabel } from '../../lib/strings.js';
+import { APP_NAME, BADGE, BANNER, PRINT, RESCHEDULE, RESTART, SCHEDULE as T, TOOLTIP, fileLabel } from '../../lib/strings.js';
 import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
 import PlanFlow from './PlanFlow.jsx';
 import RescheduleModal from './RescheduleModal.jsx';
+import PrintSchedule from './PrintSchedule.jsx';
+import { fitWeeksForPrint } from './printFit.js';
+import './print.css';
 import { activeCourses, allFinished } from './progress.js';
 import { addDays } from './schedule.js';
 import { fileIndex, hasAnySession, weekCount, weekDays } from './view.js';
@@ -45,6 +49,12 @@ export default function ScheduleScreen() {
     if (!plan) go(courses.length ? ROUTES.courses : ROUTES.home);
   }, [plan, courses.length]);
   useEffect(() => setWeek(0), [plan]); // a new plan starts at its first week
+  // Ctrl+P (not the button) also gets one week per page.
+  useEffect(() => {
+    const fit = () => fitWeeksForPrint();
+    window.addEventListener('beforeprint', fit);
+    return () => window.removeEventListener('beforeprint', fit);
+  }, []);
   // The app may stay open past midnight: count the days that passed whenever the schedule opens.
   useEffect(() => dispatch({ type: 'settle', today }), [dispatch, today]);
 
@@ -84,6 +94,15 @@ export default function ScheduleScreen() {
     onPointerDown: () => (openAtPress.current = tip?.id === id),
     onClick: (e) => (!canHover() && openAtPress.current ? setTip(null) : show(id, parts, e.currentTarget)),
   });
+
+  // The browser's own print turns the page into a PDF. Wait for the fonts, so the Arabic prints right,
+  // then shrink any week taller than a page (printFit.js).
+  async function printSchedule() {
+    setTip(null);
+    await document.fonts.ready;
+    fitWeeksForPrint();
+    window.print();
+  }
 
   function restart() {
     setConfirmRestart(false);
@@ -135,7 +154,12 @@ export default function ScheduleScreen() {
             {RESCHEDULE.button}
           </Button>
         )}
-        {/* Later: «بدّل بين جلستين» and «حمّل جدولك PDF» go here. */}
+        {!empty && (
+          <Button variant="secondary" onClick={printSchedule}>
+            {PRINT.button}
+          </Button>
+        )}
+        {/* Later: «بدّل بين جلستين» goes here. */}
         <Button variant="link" onClick={() => setConfirmRestart(true)}>
           {T.restart}
         </Button>
@@ -203,6 +227,8 @@ export default function ScheduleScreen() {
           ))}
         </Tooltip>
       )}
+
+      {!empty && <PrintSchedule plan={plan} courses={courses} index={index} today={today} tomorrow={tomorrow} />}
 
       {flow && <PlanFlow startAt={flow} onClose={() => setFlow(null)} />}
       {rescheduling && (

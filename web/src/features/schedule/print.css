@@ -1,0 +1,125 @@
+/*
+  «حمّل جدولك PDF» (HANDOFF.md §7 rule 15). On screen the print copy is hidden; when printing, only it shows.
+  White page, no drawings, no buttons, no tooltip. A4 landscape, one week per page, the course colours kept,
+  «بكرة» marked without the glow. Tokens only.
+
+  The layout rules below apply to the print copy everywhere (not only inside @media print), so the app can
+  lay it out invisibly at page width just before printing, measure each week, and shrink a week that is
+  taller than a page (printFit.js). Only showing and hiding things is inside @media print.
+*/
+.print-schedule {
+  display: none;
+}
+/* Laid out at page width but invisible, only while measuring. */
+.print-schedule.is-measuring {
+  display: block;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: var(--print-width);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Print the course colours as they are (browsers drop backgrounds by default). */
+.print-schedule,
+.print-schedule * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.print-schedule__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-block-end: var(--space-1);
+}
+.print-schedule__app {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heavy);
+}
+.print-week__title {
+  margin-block-end: var(--space-1);
+}
+
+/* The grid fits the page width: no scrolling, no see-through background. */
+.print-schedule .week-wrap {
+  overflow: visible;
+  padding: 0;
+  background: none;
+}
+.print-schedule .week {
+  min-inline-size: 0;
+  grid-template-columns: var(--grid-time-col) repeat(7, minmax(0, 1fr));
+}
+.print-schedule .week__glow {
+  display: none;
+}
+.print-schedule .session {
+  min-height: var(--tap);
+  box-shadow: none;
+}
+/* «بكرة» without the glow: a primary outline on its title; its sessions keep the white card + colour stripe. */
+.print-schedule .week__head.is-tomorrow {
+  outline: var(--border) solid var(--primary);
+}
+.print-schedule .session.is-tomorrow .session__part {
+  border: 1px solid var(--course);
+  border-inline-start-width: var(--tomorrow-stripe);
+}
+/* The white dashed break border is invisible on paper. */
+.print-schedule .session--break {
+  border-color: var(--ink-2);
+}
+.print-left {
+  margin-block-start: var(--space-2);
+  break-inside: avoid;
+}
+.print-left ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.print-schedule .left-row {
+  box-shadow: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: none;
+    min-height: 0;
+  }
+  /* Only the print copy: no drawings, no screen content, no popups, no tooltip, no buttons. */
+  .doodles,
+  .schedule > :not(.print-schedule),
+  .modal,
+  .tooltip,
+  .loader {
+    display: none !important;
+  }
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+  .screen {
+    animation: none;
+  }
+  .print-schedule,
+  .print-schedule.is-measuring {
+    display: block;
+    position: static;
+    inline-size: auto;
+    visibility: visible;
+  }
+  /* One week per page. */
+  .print-week + .print-week {
+    break-before: page;
+  }
+}

@@ -132,6 +132,12 @@ export const TOOLTIP = {
   level: (level) => `مستواك فيها: ${LEVEL_LABEL[level]}`,
 };
 
+// «حمّل جدولك PDF» (HANDOFF.md §7 rule 15): the button and the top of the printed first page.
+export const PRINT = {
+  button: 'حمّل جدولك PDF',
+  date: (dateText) => dateText, // today, «الأربعاء ٢٥ نوفمبر»
+};
+
 // Popup 4b: reschedule from what was finished (HANDOFF.md §8, Version 4).
 export const RESCHEDULE = {
   button: 'رتّب جدولي من جديد',

@@ -10,7 +10,8 @@ import { SESSION, fileLabel } from '../lib/strings.js';
 const SHORT_PART_MINUTES = 30;
 
 // parts: [{ courseName, colorIndex, kind, index, hours }]
-export function Session({ parts, tomorrow = false, picked = false, blocked = false, onClick, ...rest }) {
+// context: read first by screen readers only, e.g. «بكرة، ٤:٠٠ م», so a session makes sense on its own.
+export function Session({ parts, tomorrow = false, picked = false, blocked = false, context, onClick, ...rest }) {
   const classes = ['session', tomorrow && 'is-tomorrow', picked && 'is-picked', blocked && 'is-blocked']
     .filter(Boolean)
     .join(' ');
@@ -23,6 +24,7 @@ export function Session({ parts, tomorrow = false, picked = false, blocked = fal
       onClick={blocked ? undefined : onClick}
       {...rest}
     >
+      {context && <span className="visually-hidden">{context}، </span>}
       {parts.map((p, i) => {
         const minutes = Math.round(p.hours * 60);
         const short = minutes < SHORT_PART_MINUTES;

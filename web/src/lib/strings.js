@@ -105,6 +105,33 @@ export const COURSE_LIST = {
   empty: 'ما أضفت ولا مادة. ابدأ بالمادة اللي اختبارها أقرب.', // §8
 };
 
+// Screen 4: the schedule (texts from prototype.html; §8 where marked).
+export const SCHEDULE = {
+  title: 'جدول مذاكرتك', // for screen readers; the screen shows the banner instead
+  weeksLabel: 'الأسابيع',
+  prevWeek: '→ الأسبوع اللي قبل',
+  nextWeek: 'الأسبوع الجاي ←',
+  weekLabel: (from, to) => `${from} – ${to}`,
+  backToCourses: '→ موادي',
+  restart: 'ابدأ من جديد',
+  leftoverTitle: 'ما لحقنا لها وقت',
+  // §8 «جدول فاضي», split into its first sentence (the title) and the rest.
+  emptyTitle: 'ما فيه أيام قبل اختباراتك.',
+  emptyText: 'أقرب اختبار عندك بكرة، فما بقى وقت نرتّب فيه جدول. ارجع وتأكد من مواعيد الاختبارات.',
+  emptyBack: 'ارجع لموادي',
+  gridLabel: (weekText) => `جدول الأسبوع ${weekText}`,
+  // Read before a session's content by screen readers: «بكرة، ٤:٠٠ م».
+  sessionContext: (dayText, timeText) => `${dayText}، ${timeText}`,
+};
+
+// §8 Tooltip: the reason behind a session's estimate, 4 lines. Numbers come formatted.
+export const TOOLTIP = {
+  head: (course, file, range) => `${course}، ${file}: ${range} ساعات`,
+  pages: (pages, density) => `${pages} صفحة، كثافة النص ${DENSITY_LABEL[density]}`,
+  counts: (equations, exercises) => `${equations} معادلة، ${exercises} تمرين`,
+  level: (level) => `مستواك فيها: ${LEVEL_LABEL[level]}`,
+};
+
 // Popup 3a: preferences (labels from prototype.html).
 export const PREFS = {
   title: 'تفضيلات يومك',
@@ -125,8 +152,6 @@ export const SHORT = {
   keep: 'لا، اطلع الجدول كذا',
 };
 
-// Screens that are not built yet (temporary, until screens 2–4 exist).
-export const NOT_BUILT = 'هذي الشاشة تنبني في الخطوة الجاية.';
 
 export const LEVEL_LABEL = { strong: 'قوي', mid: 'متوسط', weak: 'ضعيف' };
 

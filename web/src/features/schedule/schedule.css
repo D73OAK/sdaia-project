@@ -1,0 +1,134 @@
+/* Screen 4: the schedule. Tokens only. */
+.schedule__top {
+  align-items: start;
+}
+.schedule__nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-card-gap);
+  margin-block: var(--space-1) var(--space-2);
+}
+.schedule__week {
+  text-align: center;
+}
+.schedule__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-card-gap);
+  margin-block-end: var(--space-2);
+}
+.schedule__empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+/* ---------- the week grid ---------- */
+.week-wrap {
+  overflow-x: auto; /* narrow screens scroll sideways; tomorrow (the start) is visible first */
+  padding: var(--grid-padding);
+  border-radius: var(--radius-lg);
+  background: var(--surface-grid);
+}
+.week {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--grid-time-col) repeat(7, minmax(var(--grid-day-min), 1fr));
+  gap: var(--grid-gap);
+  min-inline-size: calc(var(--grid-time-col) + 7 * (var(--grid-day-min) + var(--grid-gap)));
+}
+/* Every cell sits on its own layer; later cells paint over the glow that starts in the «بكرة» title. */
+.week > * {
+  position: relative;
+  z-index: 1;
+}
+.week-wrap {
+  position: relative;
+}
+.week__head {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-weight: var(--weight-heavy);
+  line-height: 1.2;
+  text-align: center;
+}
+.week__date {
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.week__head.is-exam .week__day {
+  color: var(--error-ink);
+}
+.week__head.is-tomorrow {
+  background: var(--tomorrow-head-bg);
+}
+.week__head.is-tomorrow .week__day {
+  font-size: var(--text-lg);
+}
+.week__time {
+  padding-block-start: 10px;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  text-align: center;
+  white-space: nowrap;
+}
+.week__cell {
+  display: grid;
+}
+.week__cell > .session {
+  block-size: 100%;
+}
+/* DESIGN.md §7: a white light over the «بكرة» column, 350ms after the schedule shows, over 1.4 s.
+   With prefers-reduced-motion the animation is off, so it is simply there. */
+.week__glow {
+  position: absolute;
+  z-index: -1;
+  inset-block-start: -30px;
+  inset-inline: -60px;
+  block-size: var(--glow-height);
+  background: radial-gradient(ellipse at 50% 12%, var(--tomorrow-light), transparent 68%);
+  pointer-events: none;
+  animation: glow var(--dur-glow) var(--ease) var(--delay-glow) backwards;
+}
+.week__head.is-tomorrow > :not(.week__glow) {
+  position: relative; /* the title text stays above its own glow */
+}
+@keyframes glow {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- «ما لحقنا لها وقت» ---------- */
+.schedule__left {
+  margin-block-start: var(--space-3);
+}
+.schedule__left ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.left-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-card-gap);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--course);
+  box-shadow: var(--shadow-course);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+}

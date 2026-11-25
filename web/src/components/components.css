@@ -506,8 +506,32 @@
   transition: inline-size var(--dur-press);
 }
 
+/* ---------- Tooltip ---------- */
+.tooltip {
+  position: fixed;
+  z-index: 15;
+  inline-size: var(--tooltip-width);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--highlight);
+  box-shadow: var(--shadow-tooltip);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  pointer-events: none;
+}
+.tooltip__part + .tooltip__part {
+  margin-block-start: var(--space-1);
+  padding-block-start: var(--space-1);
+  border-block-start: 1px solid var(--surface-grid);
+}
+.tooltip__head {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
 /* ---------- Sessions (schedule cells) ---------- */
 .session {
+  position: relative; /* holds the screen-reader-only context text */
   display: flex;
   flex-direction: column;
   gap: var(--border); /* the schedule shows through between the parts of one session */

@@ -109,6 +109,7 @@
   --error-padding: 3px 12px;
   --modal-width: 440px;
   --tooltip-width: 240px;
+  --glow-height: 520px; /* the white light over the «بكرة» column (prototype.html) */
   --spinner-sm: 18px;
   --spinner-lg: 64px;
   --spinner-lg-border: 7px;

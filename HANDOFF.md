@@ -15,7 +15,7 @@
 | 3 | قائمة المواد | كرت لكل مادة مع مدى الساعات، و«+ إضافة مادة أخرى»، و«خلصت، رتّب جدولي» |
 | 3أ | popup التفضيلات | ساعات المذاكرة، وعدد البريكات، ومدة البريك، والبداية، والنهاية، و«اطلع جدولي» |
 | 3ب | popup «الوقت ما يكفي» | الأرقام، و«ايه، أزيد ساعاتي»، و«لا، اطلع الجدول كذا» |
-| 4 | الجدول | التحذير أو النجاح، وتنقّل الأسابيع، و«→ موادي»، و«بدّل بين جلستين»، و«ابدأ من جديد»، والتقويم، و«ما لحقنا لها وقت» |
+| 4 | الجدول | التحذير أو النجاح، وتنقّل الأسابيع، و«→ موادي»، و«بدّل بين جلستين»، و«حمّل جدولك PDF» (زر ثانوي)، و«ابدأ من جديد»، والتقويم، و«ما لحقنا لها وقت» |
 | 4أ | popup «تبدأ من جديد؟» | «لا، خلّ جدولي»، و«ايه، احذف وابدأ من جديد» |
 | — | tooltip | سبب التقدير لكل جلسة |
 | — | overlay التحميل | «نقرأ ن ملفات ونحسب وقت مذاكرتك...» |
@@ -50,11 +50,11 @@
 - **Metrics:** `pages`، `density` (`low | mid | high`)، `wordsPerPage`، `equations`، `exercises`.
 - **Estimate:** `loHours`، `hiHours` (بفاصلة نص ساعة)، و`reason` (نص يتولد من الـmetrics والمستوى).
 - **Preferences:** `hoursPerDay` (١–١٤)، `breaks` (٠–٦)، `breakMinutes` (٥–٩٠)، `startTime`، `endTime` (`HH:MM`).
-- **Plan:** `days[]`، `blocks[]` (`session | break`، `start`، `lengthHours`)، `sessions` (`date` + `slot` ← `chapterId` + `hours`)، `needHours`، `haveHours`.
+- **Plan:** `blocks[]` (`session | break`، `start`، `lengthHours` أو `minutes`)، `days[]` (`date`، `exams[]` = المواد اللي اختبارها هاليوم، `sessions[]` = `slot` ← `chapterId` + `hours`)، `leftover[]`، `needHours`، `haveHours`.
 - **Leftover:** `chapterId`، `missingHours`.
 
 ## 6. Actions (الأفعال)
-`startFlow` · `addCourse` · `uploadChapters` · `uploadExercises` · `removeChapter` · `reuploadChapter` · `setLevel` · `setExamDate` · `saveCourse` (← `analyseChapters` ← `estimate`) · `finishCourses` · `setPreferences` · `validatePreferences` · `buildPlan` · `increaseHours` · `acceptShortPlan` · `prevWeek` · `nextWeek` · `showReason` · `toggleSwapMode` · `pickSession` · `swapSessions` · `backToCourses` · `restart` (← `confirmRestart`) · `loadDemo`
+`startFlow` · `addCourse` · `uploadChapters` · `uploadExercises` · `removeChapter` · `reuploadChapter` · `setLevel` · `setExamDate` · `saveCourse` (← `analyseChapters` ← `estimate`) · `finishCourses` · `setPreferences` · `validatePreferences` · `buildPlan` · `increaseHours` · `acceptShortPlan` · `prevWeek` · `nextWeek` · `showReason` · `toggleSwapMode` · `pickSession` · `swapSessions` · `backToCourses` · `exportPdf` · `restart` (← `confirmRestart`) · `loadDemo`
 
 ## 7. Rules
 1. كل ملف PDF في «ملفات الشابترات» = شابتر واحد، وكل ملف في «ملفات التمارين» = ملف تمارين واحد. البرنامج يقدّر بس الملفات المرفوعة.
@@ -66,11 +66,12 @@
 7. الجدول يستخدم `hiHours`، وأيامه تبدأ من بكرة ولين آخر اختبار.
 8. اليوم يبدأ من `startTime`، ويتقسم لجلسة ثم بريك ثم جلسة... بعدد `breaks + 1` جلسات، ومدة كل جلسة `hoursPerDay ÷ (breaks+1)`.
 9. كل جلسة تروح للمادة اللي اختبارها أقرب وباقي لها ملفات. داخل كل مادة: كل الشابترات أول بترتيب رفعها، وبعدها كل ملفات التمارين بترتيب رفعها، وكلها قبل يوم اختبارها.
-10. ما فيه جلسة في يوم اختبار مادتها أو بعده.
+10. ما فيه جلسة في يوم اختبار مادتها أو بعده. بس يوم الاختبار يوم عادي للمواد الثانية: يقدر يكون فيه جلسات مواد اختبارها بعده، وتطلع في الجدول مع كرت الاختبار.
 11. التفضيلات مقبولة إذا: `hoursPerDay×60 + breaks×breakMinutes ≤ endTime − startTime`، و`endTime > startTime`.
 12. أي شابتر ما لقى وقت يروح لقائمة «ما لحقنا لها وقت».
 13. التبديل مسموح بين جلستين إذا كل وحدة منهم تبقى قبل يوم اختبار مادتها.
 14. «ابدأ من جديد» يحذف كل شي، ولازم يتأكد قبل.
+15. **«حمّل جدولك PDF»** (`exportPdf`) يستخدم `window.print()` مع print stylesheet (`@media print`)، بدون مكتبة PDF لأنها تخرّب العربي. الصفحة المطبوعة: خلفية بيضاء، بدون الرسومات وبدون أزرار، A4 بالعرض (landscape)، أسبوع واحد في كل صفحة، وألوان المواد نفسها، وفوق: اسم البرنامج وتاريخ اليوم، وقائمة «ما لحقنا لها وقت» في الآخر.
 
 ## 8. نصوص الحالات (حرفياً)
 | المكان | النص |
@@ -104,6 +105,6 @@
 3. **[?] الحفظ:** في النسخة الأولى ما فيه حسابات. الجدول يُحفظ في `localStorage` (قصة Should)، أو يضيع لما يسكّر الصفحة؟
 4. **[?] معايرة الأوزان:** وين نخزن الوقت الحقيقي اللي أخذه الطالب، عشان نعدّل أوزان التقدير بعدين؟
 5. **[?] قياس النجاح:** الهدف «٢٠ طالب، و١٠ منهم مشوا على جدولهم أسبوع». كيف نعرف هذا بدون حسابات؟ استبيان؟ analytics مجهول الهوية؟
-6. **[?] تعدد الأجهزة:** الطالب يرتب على اللابتوب ويبي يشوف جدوله على الجوال. هذا خارج النطاق للحين، بس يأثر على قرار الحفظ.
+6. **تعدد الأجهزة:** الطالب يرتب على اللابتوب ويبي يشوف جدوله على الجوال. **القرار:** ما فيه backend ولا حسابات في هالنسخة. الطالب ينقل جدوله لأي جهاز ثاني بتحميله PDF («حمّل جدولك PDF»، §7 rule 15).
 7. **[?] الساعة والمنطقة الزمنية:** نفترض توقيت جهاز الطالب.
 8. **[?] حد ٦ مواد:** هل هو حد تصميم بس، ولا حد تقني كمان؟

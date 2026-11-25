@@ -11,7 +11,7 @@ You are building **ميزان المذاكرة** (Study Scale), an Arabic RTL we
 
 ## Hard rules
 - Arabic, `dir="rtl"`. Laptop and tablet first. Every hover interaction needs a tap equivalent.
-- No accounts, no login, no backend database in v1. Keep all state in the browser (`localStorage` for the "Should: saved schedule" story if time allows).
+- No accounts, no login, no backend in v1. "Backend" here means the app's logic and data layer, all in the browser: courses, preferences and the plan are saved in `localStorage`. The student moves the schedule to other devices by downloading it as a PDF (HANDOFF.md §7 rule 15).
 - Only PDF. Each file in «ملفات الشابترات» = exactly one chapter; each file in the optional «ملفات التمارين» zone = one exercise file. Estimate only the files the student uploaded.
 - From opening the app to seeing the schedule must take under **10 minutes** for 4 courses.
 - Do not add features that are not in PRD.md. Out of scope: drag-and-drop, notifications, sharing, sync, non-PDF files.
@@ -49,9 +49,9 @@ hi   = round_to_half(lo * 1.4)
 | Day | Deliver | Done when |
 |---|---|---|
 | 1 | PDF upload + analysis + estimate per chapter, with the reason | Uploading 3 real chapter PDFs shows a sensible `lo–hi` and the reason, and a bad file shows the error state |
-| 2 | Screens 1–3 + the preferences popup with validation, styled per DESIGN.md | A student can add 4 courses and see the list with ranges and colours |
-| 3 | Scheduling + the weekly calendar + the tooltip + the not-enough-time flow | The schedule matches prototype behaviour, and the «ما لحقنا لها وقت» list works |
-| 4 | Polish, the loading state, the background animation, tablet tap checks, and **Should: swap sessions** only if everything else works | All states in DESIGN.md are reproducible, and nothing breaks at 768px width |
+| 2 | Logic and data, no UI: `schedule.js` (port of `build()`, chapters then exercises, exam days keep other courses' sessions) and `storage.js` (localStorage), with tests | The tests pass, and the mock.json plan is recomputed with `buildPlan` |
+| 3 | Tokens, components, then screens 1–4 one at a time: the preferences popup with validation, the weekly calendar, the tooltip and the not-enough-time flow, all connected to the real logic and saved data | A student can add 4 courses and get a schedule that matches the logic, and the «ما لحقنا لها وقت» list works |
+| 4 | Polish, the loading state, the background animation, tablet tap checks, then **Should: «حمّل جدولك PDF»**, then **Should: swap sessions** only if everything else works | All states in DESIGN.md are reproducible, and nothing breaks at 768px width |
 
 If Day 1 slips, cut the per-chapter tooltip details first, not the estimate.
 

@@ -27,8 +27,13 @@ v1 decisions (approved 2026-11-24):
 - Schedule: a weekly calendar with week arrows, using the **max** (`hiHours`) of each range, from tomorrow
   to the last exam (logic: `build()` in prototype.html). Device clock and timezone.
   Within a course: all chapters first (upload order), then all exercise files, all before its exam.
-- Courses, preferences and the plan are saved in localStorage. PDFs are never stored, only the counted numbers.
-- Swap sessions (a Should story): Day 4, only if everything else works.
+- No backend and no accounts in this version. "Backend" means the logic and data layer in the browser:
+  courses, preferences and the plan are saved in localStorage (`lib/storage.js`). PDFs are never stored,
+  only the counted numbers. The student moves the schedule to other devices by downloading it as a PDF.
+- «حمّل جدولك PDF» (a Should story): `window.print()` + a print stylesheet, no PDF library (they break
+  Arabic). Rules in HANDOFF.md §7 rule 15.
+- An exam day still holds sessions of other courses whose exams are later (shown next to the exam card).
+- Swap sessions (a Should story): Day 4, after the PDF export, only if everything else works.
 
 Out of scope: accounts, login, cross-device sync; drag and drop; non-PDF files; reminders and notifications;
 sharing; progress tracking and stats; OCR; recording actual study time; success measurement; AI features.
@@ -99,10 +104,11 @@ sdaia-project/
 The starter's `src/screens/` is replaced by `features/` as each screen is built.
 
 ## Build order (AGENT_BRIEF.md)
-1) Day 1: PDF reading + estimate per chapter with the reason, tests, and a temporary unstyled test page.
-2) Day 2: tokens + components, then screens 1–3 and the preferences popup, one screen at a time.
-3) Day 3: schedule.js with tests, then the weekly calendar, tooltip and the not-enough-time flow.
-4) Day 4: polish, loading state, background animation, 768px tap checks, then swap sessions if time allows.
+1) Day 1 (done): PDF reading + estimate per chapter with the reason, tests, and a temporary unstyled test page.
+2) Day 2 (done), the "backend day": logic and data only, no UI. schedule.js and storage.js with tests.
+3) Day 3: tokens + components, then screens 1–4 one at a time, connected to the real logic and saved data.
+4) Day 4: polish, loading state, background animation, 768px tap checks, then «حمّل جدولك PDF»,
+   then swap sessions if time allows.
 
 ## Deployment
 Vercel (Hobby plan), project root = `web/`. No self-managed servers.

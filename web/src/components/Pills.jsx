@@ -24,7 +24,7 @@ export default function Pills({ id, label, options, value, onChange, error }) {
         {label}
       </span>
       <div className="field__control">
-        <div className="pills" role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={errorId}>
+        <div className="pills" id={id} role="radiogroup" aria-labelledby={`${id}-label`} aria-describedby={errorId}>
           {options.map((o, i) => (
             <button
               key={o.value}

@@ -66,6 +66,32 @@ export const RESTART = {
   yes: 'ايه، احذف وابدأ من جديد',
 };
 
+// Screen 2: course entry. Errors marked §8 are word for word from HANDOFF.md §8.
+export const COURSE_FORM = {
+  title: 'مادة جديدة',
+  nameLabel: 'اسم المادة:',
+  namePlaceholder: 'مثلاً: الرياضيات ١',
+  levelLabel: 'مستواك فيها:',
+  dateLabel: 'موعد الاختبار:',
+  datePlaceholder: 'اختر اليوم',
+  save: 'احفظ المادة',
+  errors: {
+    name: 'اسم المادة فاضي. اكتبه عشان يطلع في جدولك.', // §8
+    noChapters: 'ما رفعت ولا شابتر. ارفع ملف PDF واحد على الأقل.', // §8
+    badFile: 'فيه ملف ما نقدر نقراه. أعد رفعه أو احذفه، وبعدها احفظ.', // §8
+    level: 'ما اخترت مستواك. اختر واحد عشان نضبط الساعات على قدّك.', // §8
+    date: 'موعد الاختبار ناقص أو قبل بكرة. اختر تاريخ من بكرة وطالع.', // §8
+  },
+};
+
+// §8: the 6-course limit.
+export const COURSE_LIMIT = 'وصلت لـ٦ مواد، وهذا الحد في هالنسخة. كمّل وخل نرتّب جدولك.';
+
+// §8: preferences popup errors (used by screen 3).
+export const PREFS_ERROR = {
+  out_of_range: 'فيه حقل فاضي أو رقم برا المدى. الساعات من ١ لين ١٤، والبريكات من ٠ لين ٦، ومدة البريك من ٥ لين ٩٠ دقيقة.',
+};
+
 // Screens that are not built yet (temporary, until screens 2–4 exist).
 export const NOT_BUILT = 'هذي الشاشة تنبني في الخطوة الجاية.';
 
@@ -102,22 +128,6 @@ export const UPLOAD_ZONE = {
 // numbered separately: «شابتر ٢», «تمارين ١». `numberText` is already formatted (Arabic digits).
 export const fileLabel = (kind, numberText) => `${kind === 'exercises' ? 'تمارين' : 'شابتر'} ${numberText}`;
 
-// Temporary Day 1 test page (features/estimate/PdfTestPage.jsx). Deleted when screen 2 is built.
-export const PDF_TEST = {
-  title: 'صفحة اختبار قراءة الـPDF (مؤقتة)',
-  level: 'مستواك في المادة:',
-  file: 'الملف',
-  pages: 'الصفحات',
-  words: 'كلمة في الصفحة',
-  density: 'الكثافة',
-  equations: 'المعادلات',
-  exercises: 'التمارين',
-  range: 'المدى (ساعات)',
-  reason: 'السبب',
-  total: 'مجموع المادة:',
-  clear: 'امسح الملفات',
-  empty: 'ما رفعت ولا شابتر. ارفع ملف PDF واحد على الأقل.',
-};
 
 // Temporary components page (dev/ComponentsPage.jsx, route #/components). Deleted when the screens are done.
 export const COMPONENTS_PAGE = {

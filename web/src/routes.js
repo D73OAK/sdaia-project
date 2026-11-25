@@ -8,7 +8,6 @@ export const ROUTES = {
   courses: '/courses', // screen 3
   schedule: '/schedule', // screen 4
   components: '/components', // temporary components page
-  pdfTest: '/pdf-test', // temporary Day 1 test page
 };
 
 const read = () => window.location.hash.replace(/^#/, '') || '/';

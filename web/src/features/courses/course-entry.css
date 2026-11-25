@@ -1,0 +1,16 @@
+/* Screen 2: course entry. Tokens only. */
+.course-entry__date {
+  max-inline-size: var(--select-width);
+}
+.course-entry__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-card-gap);
+  margin-block-start: var(--space-3);
+}
+.course-entry__limit {
+  margin-block-end: var(--space-2);
+  font-weight: var(--weight-bold);
+}

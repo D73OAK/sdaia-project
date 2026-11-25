@@ -371,6 +371,10 @@
   background: var(--hours-bg);
   color: var(--hours-ink);
 }
+/* On a course card the hours range is the most important number on the screen (DESIGN.md §6 Badge). */
+.course-card .badge--hours {
+  font-size: var(--text-md);
+}
 .badge--exam {
   background: var(--error-bg);
   color: var(--error-ink);
@@ -452,6 +456,49 @@
   justify-content: center;
   gap: var(--space-card-gap);
   margin-block-start: var(--space-3);
+}
+
+/* ---------- Loading overlay ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--loader);
+  text-align: center;
+}
+.loader__spinner {
+  inline-size: var(--spinner-lg);
+  block-size: var(--spinner-lg);
+  border: var(--spinner-lg-border) solid var(--hours-bg);
+  border-block-start-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.loader__text {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-bold);
+}
+.loader__bar {
+  inline-size: min(320px, 70vw);
+  block-size: var(--bar-height);
+  border-radius: var(--radius-xs);
+  background: var(--hours-bg);
+  overflow: hidden;
+}
+.loader__fill {
+  display: block;
+  block-size: 100%;
+  border-radius: var(--radius-xs);
+  background: var(--primary);
+  transition: inline-size var(--dur-press);
 }
 
 /* ---------- Sessions (schedule cells) ---------- */

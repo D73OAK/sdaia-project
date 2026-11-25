@@ -3,12 +3,12 @@ import Doodles from './components/Doodles.jsx';
 import Button from './components/Button.jsx';
 import HomeScreen from './features/courses/HomeScreen.jsx';
 import ComponentsPage from './dev/ComponentsPage.jsx'; // TEMPORARY
-import PdfTestPage from './features/estimate/PdfTestPage.jsx'; // TEMPORARY (Day 1)
+import CourseEntryScreen from './features/courses/CourseEntryScreen.jsx';
 import { APP_NAME, COMMON, NOT_BUILT } from './lib/strings.js';
 import { ROUTES, go, useRoute } from './routes.js';
 import { AppProvider } from './state.jsx';
 
-// Screens 2–4 are not built yet; their addresses show this instead of a blank page.
+// Screens 3–4 are not built yet; their addresses show this instead of a blank page.
 function NotBuilt() {
   return (
     <section className="screen">
@@ -28,10 +28,10 @@ function Screen({ path }) {
   switch (path) {
     case ROUTES.home:
       return <HomeScreen />;
+    case ROUTES.courseNew:
+      return <CourseEntryScreen />;
     case ROUTES.components:
       return <ComponentsPage />;
-    case ROUTES.pdfTest:
-      return <PdfTestPage />;
     default:
       return <NotBuilt />;
   }

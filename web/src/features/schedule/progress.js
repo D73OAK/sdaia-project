@@ -8,7 +8,7 @@
 // needs hiHours − studied. What is left under 15 minutes counts as finished: no session part is ever
 // shorter than 15 minutes (§7 rule 9), so such a tail could never be scheduled.
 import { emptyProgress } from '../../lib/storage.js';
-import { MIN_PART_MINUTES, addDays, studyOrder } from './schedule.js';
+import { MIN_PART_MINUTES, studyOrder } from './schedule.js';
 
 export { emptyProgress };
 
@@ -63,11 +63,10 @@ export function planTotals(plan, courses, progress, today) {
   return { needHours: round2(need / 60), haveHours: round2((need - missingTotal) / 60), leftover };
 }
 
-// Counts every day before tomorrow as studied and drops it from the plan (§7 rule 16).
-// Returns { plan, progress, changed }. `changed` is false when there was nothing to settle.
+// Counts every day that has ended (before today) as studied and drops it from the plan (§7 rule 16).
+// Today is not counted while it is still today. Returns { plan, progress, changed }.
 export function settlePlan(plan, courses, progress, today) {
-  const tomorrow = addDays(today, 1);
-  const past = plan.days.filter((d) => d.date < tomorrow);
+  const past = plan.days.filter((d) => d.date < today);
   if (!past.length) return { plan, progress, changed: false };
 
   const studied = { ...progress.studied };
@@ -76,7 +75,7 @@ export function settlePlan(plan, courses, progress, today) {
       for (const p of s.parts) studied[p.chapterId] = round2((studied[p.chapterId] ?? 0) + p.hours);
 
   const nextProgress = { ...progress, studied };
-  const days = plan.days.filter((d) => d.date >= tomorrow);
+  const days = plan.days.filter((d) => d.date >= today);
   const nextPlan = { ...plan, days, ...planTotals({ ...plan, days }, courses, nextProgress, today) };
   return { plan: nextPlan, progress: nextProgress, changed: true };
 }
@@ -99,3 +98,14 @@ export function applyChecks(courses, progress, checked, today) {
   }
   return { studied, finished: [...finished] };
 }
+
+// After a course is edited or deleted: keep the records of files that still exist, drop the others
+// (HANDOFF.md §7 rule 18).
+export function pruneProgress(progress, courses) {
+  const ids = new Set(courses.flatMap((c) => c.chapters.map((ch) => ch.id)));
+  const studied = Object.fromEntries(Object.entries(progress.studied).filter(([id]) => ids.has(id)));
+  return { studied, finished: progress.finished.filter((id) => ids.has(id)) };
+}
+
+// Every course's exam has passed: nothing can be planned any more.
+export const allExamsPassed = (courses, today) => courses.length > 0 && courses.every((c) => c.examDate <= today);

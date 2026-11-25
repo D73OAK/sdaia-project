@@ -68,3 +68,13 @@ export function courseTotal(chapters) {
     { loHours: 0, hiHours: 0 },
   );
 }
+
+// − / + on a file (HANDOFF.md §7 rule 19): both ends move by half an hour; the low end never goes under
+// half an hour. Returns the new { loHours, hiHours }, or null when the step is not allowed.
+export const STEP_HOURS = 0.5;
+export function shiftRange({ loHours, hiHours }, step) {
+  const lo = loHours + step;
+  const hi = hiHours + step;
+  if (lo < C.minHours) return null;
+  return { loHours: lo, hiHours: hi };
+}

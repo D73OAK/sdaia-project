@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 // The sample data (web/src/data/mock.json).
 import mock from '../../data/mock.json';
-import { courseTotal, densityOf, estimateChapter, roundHalf } from './estimate.js';
+import { courseTotal, densityOf, estimateChapter, roundHalf, shiftRange } from './estimate.js';
 
 describe('estimateChapter matches every chapter in mock.json', () => {
   for (const course of mock.courses) {
@@ -66,5 +66,16 @@ describe('courseTotal', () => {
       { estimate: { loHours: 2.5, hiHours: 3.5 } },
     ];
     expect(courseTotal(chapters)).toEqual({ loHours: 6.5, hiHours: 9 });
+  });
+});
+
+describe('shiftRange (− / + on a file)', () => {
+  it('moves both ends by half an hour', () => {
+    expect(shiftRange({ loHours: 2.5, hiHours: 3.5 }, 0.5)).toEqual({ loHours: 3, hiHours: 4 });
+    expect(shiftRange({ loHours: 2.5, hiHours: 3.5 }, -0.5)).toEqual({ loHours: 2, hiHours: 3 });
+  });
+  it('never takes the low end under half an hour', () => {
+    expect(shiftRange({ loHours: 0.5, hiHours: 1 }, -0.5)).toBeNull();
+    expect(shiftRange({ loHours: 1, hiHours: 1.5 }, -0.5)).toEqual({ loHours: 0.5, hiHours: 1 });
   });
 });

@@ -35,7 +35,7 @@ const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 // Keeps only the fields we mean to save (HANDOFF.md §5). Anything else, like a File object or text
 // from a PDF, is dropped here.
 function cleanChapter(ch) {
-  const out = pick(ch, ['id', 'fileName', 'fileSizeBytes', 'kind', 'index', 'error']);
+  const out = pick(ch, ['id', 'fileName', 'fileSizeBytes', 'kind', 'index', 'error', 'adjusted']);
   if (isObject(ch.metrics)) out.metrics = pick(ch.metrics, ['pages', 'density', 'wordsPerPage', 'equations', 'exercises']);
   if (isObject(ch.estimate)) out.estimate = pick(ch.estimate, ['loHours', 'hiHours', 'reason']);
   return out;

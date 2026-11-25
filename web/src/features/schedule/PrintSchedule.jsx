@@ -7,11 +7,12 @@ import { APP_NAME, BADGE, PRINT, SCHEDULE as T, fileLabel } from '../../lib/stri
 import { Badge } from '../../components/Cards.jsx';
 import { weekCount, weekDays } from './view.js';
 import WeekGrid from './WeekGrid.jsx';
+import { colorIndexOf } from '../courses/courses.js';
 
 const noTooltip = () => undefined;
 const notInteractive = () => ({ tabIndex: -1 });
 
-export default function PrintSchedule({ plan, courses, index, today, tomorrow }) {
+export default function PrintSchedule({ plan, courses, index, today, highlight, highlightLabel }) {
   const weeks = Array.from({ length: weekCount(plan) }, (_, w) => weekDays(plan, w));
   return (
     <div className="print-schedule" aria-hidden="true">
@@ -29,7 +30,8 @@ export default function PrintSchedule({ plan, courses, index, today, tomorrow })
               blocks={plan.blocks}
               index={index}
               courses={courses}
-              tomorrow={tomorrow}
+              highlight={highlight}
+              highlightLabel={highlightLabel}
               weekText={weekText}
               tipFor={noTooltip}
               onSession={notInteractive}
@@ -45,7 +47,7 @@ export default function PrintSchedule({ plan, courses, index, today, tomorrow })
               const found = index.get(l.chapterId);
               if (!found) return null;
               return (
-                <li key={l.chapterId} className="left-row" style={{ '--course': `var(--c${found.course.order})` }}>
+                <li key={l.chapterId} className="left-row" style={{ '--course': `var(--c${colorIndexOf(found.course)})` }}>
                   <span>
                     <bdi>{found.course.name}</bdi>، {fileLabel(found.chapter.kind, fmtNumber(found.chapter.index))}
                   </span>

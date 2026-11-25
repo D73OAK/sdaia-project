@@ -25,22 +25,61 @@ export function draftProblems(draft, today) {
 
 export const hasProblems = (problems) => Object.keys(problems).length > 0;
 
-// Builds the course to save. readFiles = { lecture: [readChapter results], exercises: [...] }, all without
-// errors. Chapters and exercise files are numbered separately, in upload order, and each gets its estimate.
-// `order` (1–6) fixes the course colour: --c1 … --c6.
-export function makeCourse({ id, name, level, examDate, order, readFiles }) {
+// ---------- colours (HANDOFF.md §7 rules 4 and 18) ----------
+// A course keeps its colour (--c1 … --c6) for good, also after other courses are edited or deleted.
+// Older data (and mock.json) may hold a hex colour; then the add order picks the colour.
+export function colorIndexOf(course) {
+  const m = /^--c([1-6])$/.exec(course.color ?? '');
+  return m ? Number(m[1]) : ((course.order - 1) % 6) + 1;
+}
+
+// A new course takes the first colour no course is using.
+export function freeColorIndex(courses) {
+  const used = new Set(courses.map(colorIndexOf));
+  for (let i = 1; i <= 6; i++) if (!used.has(i)) return i;
+  return 1;
+}
+
+// Courses stay in the order they were added: a new one goes after the last.
+export const nextOrder = (courses) => courses.reduce((max, c) => Math.max(max, c.order), 0) + 1;
+
+// ---------- building the course to save ----------
+// files = { lecture: [item], exercises: [item] } in screen order, all without errors. An item is a file
+// read now ({ read }) or a file saved before ({ saved }: its chapter), plus `adjusted`: { loHours, hiHours }
+// when the student moved its range with − / + (HANDOFF.md §7 rule 19), else null.
+// Chapters and exercise files are numbered separately in screen order. A saved file keeps its id, so its
+// studied/finished records stay. An adjusted file keeps its hours when the level changes; the others are
+// estimated again with the course level.
+export function makeCourse({ id, name, level, examDate, order, color, files }) {
+  const used = new Set(['lecture', 'exercises'].flatMap((k) => files[k].map((f) => f.saved?.id).filter(Boolean)));
   const chapters = ['lecture', 'exercises'].flatMap((kind) =>
-    readFiles[kind].map((file, i) => ({
-      id: `${id}-${kind === 'exercises' ? 'ex' : 'ch'}${i + 1}`,
-      fileName: file.fileName,
-      fileSizeBytes: file.fileSizeBytes,
-      kind,
-      index: i + 1,
-      metrics: file.metrics,
-      estimate: estimateChapter(file.metrics, level),
-    })),
+    files[kind].map((item, i) => {
+      const source = item.saved ?? item.read;
+      const base = estimateChapter(source.metrics, level);
+      const chapter = {
+        id: item.saved?.id ?? newChapterId(id, kind, used),
+        fileName: source.fileName,
+        fileSizeBytes: source.fileSizeBytes,
+        kind,
+        index: i + 1,
+        metrics: source.metrics,
+        estimate: item.adjusted ? { ...base, loHours: item.adjusted.loHours, hiHours: item.adjusted.hiHours } : base,
+      };
+      if (item.adjusted) chapter.adjusted = true;
+      return chapter;
+    }),
   );
-  return { id, name: name.trim(), level, examDate, color: `--c${order}`, order, chapters };
+  return { id, name: name.trim(), level, examDate, color: `--c${color}`, order, chapters };
+}
+
+// A chapter id that is not used yet in this course: c1-ch4, c1-ex2 …
+function newChapterId(courseId, kind, used) {
+  const prefix = `${courseId}-${kind === 'exercises' ? 'ex' : 'ch'}`;
+  let n = 1;
+  while (used.has(prefix + n)) n += 1;
+  const id = prefix + n;
+  used.add(id);
+  return id;
 }
 
 // A new course id that does not clash with the ones already there.

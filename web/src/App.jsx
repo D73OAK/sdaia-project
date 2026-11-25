@@ -9,6 +9,8 @@ import { ROUTES, useRoute } from './routes.js';
 import { AppProvider } from './state.jsx';
 
 function Screen({ path }) {
+  const edit = /^\/course\/edit\/(.+)$/.exec(path); // screen 2 in edit mode: #/course/edit/<id>
+  if (edit) return <CourseEntryScreen courseId={decodeURIComponent(edit[1])} />;
   switch (path) {
     case ROUTES.courseNew:
       return <CourseEntryScreen />;

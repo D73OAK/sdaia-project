@@ -12,5 +12,5 @@ const dayNumber = (iso) => {
 // today: 'YYYY-MM-DD' on the student's device.
 export function demoCourses(today) {
   const shift = dayNumber(today) - dayNumber(mock.today);
-  return mock.courses.map((c) => ({ ...structuredClone(c), examDate: addDays(c.examDate, shift) }));
+  return mock.courses.map((c) => ({ ...structuredClone(c), color: `--c${c.order}`, examDate: addDays(c.examDate, shift) }));
 }

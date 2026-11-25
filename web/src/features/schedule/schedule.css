@@ -188,3 +188,14 @@
   outline: var(--outline) solid var(--primary);
   outline-offset: 2px;
 }
+
+/* «بدّل بين جلستين»: the hint while picking two sessions (§8). */
+.schedule__hint {
+  display: inline-block;
+  margin-block-end: var(--space-card-gap);
+  padding: var(--error-padding);
+  border-radius: var(--radius-xs);
+  background: var(--hours-bg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+}

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 export const ROUTES = {
   home: '/',
   courseNew: '/course/new', // screen 2
+  courseEdit: (id) => `/course/edit/${id}`, // screen 2 in edit mode
   courses: '/courses', // screen 3
   schedule: '/schedule', // screen 4
   components: '/components', // temporary components page

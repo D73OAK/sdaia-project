@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import mock from '../../data/mock.json';
 import { buildPlan } from './schedule.js';
-import { allFinished, applyChecks, emptyProgress, isFinished, minutesLeft, planTotals, settlePlan } from './progress.js';
+import {
+  allExamsPassed,
+  allFinished,
+  applyChecks,
+  emptyProgress,
+  isFinished,
+  minutesLeft,
+  planTotals,
+  pruneProgress,
+  settlePlan,
+} from './progress.js';
+import { visiblePlan } from './view.js';
 
 const { courses, preferences } = mock;
 const { _note, ...plan } = mock.plan; // built on 2026-11-24: days 25 Nov – 8 Dec
@@ -22,31 +33,55 @@ describe('minutesLeft / isFinished', () => {
   });
 });
 
-describe('settlePlan: the schedule always starts tomorrow (§7 rule 16)', () => {
+describe('settlePlan: only days that have ended count as studied (§7 rule 16)', () => {
   it('changes nothing on the day the plan was made', () => {
     expect(settlePlan(plan, courses, emptyProgress(), '2026-11-24').changed).toBe(false);
   });
 
-  // Two days later: 25 and 26 Nov have passed (26 is "today", also before tomorrow).
-  const r = settlePlan(plan, courses, emptyProgress(), '2026-11-26');
+  it('does not count today while it is still today', () => {
+    // On 25 Nov (the plan's first day) nothing has ended yet.
+    expect(settlePlan(plan, courses, emptyProgress(), '2026-11-25').changed).toBe(false);
+  });
 
-  it('hides every day before tomorrow, so the plan starts on the real tomorrow', () => {
+  // On 27 Nov: 25 and 26 Nov have ended; 27 Nov is today and stays.
+  const r = settlePlan(plan, courses, emptyProgress(), '2026-11-27');
+
+  it('drops the days that ended and keeps today', () => {
     expect(r.changed).toBe(true);
     expect(r.plan.days[0].date).toBe('2026-11-27');
     expect(r.plan.days).toHaveLength(12);
   });
 
-  it('counts the sessions of those days as studied', () => {
+  it('counts the sessions of the ended days as studied', () => {
     // 25 Nov: 3 × 1.33 of ch1; 26 Nov: 1 h of ch1, then 0.33 + 1.33 + 1.33 of ch2
     expect(r.progress.studied).toEqual({ 'c1-ch1': 4.99, 'c1-ch2': 2.99 });
     expect(isFinished(ch('c1-ch1'), r.progress)).toBe(true); // all its sessions passed
     expect(minutesLeft(ch('c1-ch2'), r.progress) / 60).toBeCloseTo(3.51, 2); // partly studied
   });
 
-  it('counts hours and leftover from the days still to come only', () => {
+  it('counts hours and leftover from today and the days still to come', () => {
     expect(r.plan.leftover).toEqual([{ chapterId: 'c1-ch4', missingHours: 4.01 }]);
     expect(r.plan.needHours).toBeCloseTo(47.5 - 4.99 - 2.99, 1);
     expect(r.plan.haveHours + 4.01).toBeCloseTo(r.plan.needHours, 1);
+  });
+
+  it('shows today as the first, highlighted column when it has sessions', () => {
+    const v = visiblePlan(r.plan, '2026-11-27');
+    expect(v).toMatchObject({ highlight: '2026-11-27', label: 'today' });
+    expect(v.plan.days[0].date).toBe('2026-11-27');
+  });
+
+  it('starts at tomorrow when today has no sessions', () => {
+    const noToday = { ...r.plan, days: r.plan.days.map((d) => (d.date === '2026-11-27' ? { ...d, sessions: [] } : d)) };
+    const v = visiblePlan(noToday, '2026-11-27');
+    expect(v).toMatchObject({ highlight: '2026-11-28', label: 'tomorrow' });
+    expect(v.plan.days[0].date).toBe('2026-11-28');
+  });
+
+  it('knows when every exam has passed', () => {
+    expect(allExamsPassed(courses, '2026-12-08')).toBe(true); // the last exam is on 8 Dec
+    expect(allExamsPassed(courses, '2026-12-07')).toBe(false);
+    expect(allExamsPassed([], '2026-12-08')).toBe(false);
   });
 
   it('a plan whose days have all passed is empty', () => {
@@ -118,5 +153,12 @@ describe('applyChecks: «رتّب الباقي» (§7 rule 17)', () => {
     expect(plan2.days.every((d) => d.sessions.length === 0)).toBe(true);
     expect(plan2.leftover).toEqual([]);
     expect(allFinished(courses, emptyProgress(), '2026-11-24')).toBe(false);
+  });
+});
+
+describe('pruneProgress (§7 rule 18)', () => {
+  it('keeps the records of files that still exist and drops the others', () => {
+    const progress = { studied: { 'c1-ch1': 2, 'c9-ch1': 1 }, finished: ['c1-ch2', 'gone'] };
+    expect(pruneProgress(progress, courses)).toEqual({ studied: { 'c1-ch1': 2 }, finished: ['c1-ch2'] });
   });
 });

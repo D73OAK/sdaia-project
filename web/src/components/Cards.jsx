@@ -8,11 +8,19 @@ export function Card({ className = '', children }) {
   return <div className={`card ${className}`}>{children}</div>;
 }
 
-// A course in the list. colorIndex 1–6 picks --c1…--c6 (fixed per course, in the order it was added).
+// A course in the list. colorIndex 1–6 picks --c1…--c6 (the course keeps it for good).
 // isNew: the mint ✓ before the name and a mint ring that fades in 0.5 s.
-export function CourseCard({ name, colorIndex, hoursText, isNew = false }) {
+// With onClick the card is a button (it opens the course in edit mode); `label` names it for screen readers.
+export function CourseCard({ name, colorIndex, hoursText, isNew = false, onClick, label }) {
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div className={`course-card ${isNew ? 'is-new' : ''}`} style={{ '--course': `var(--c${colorIndex})` }}>
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      aria-label={onClick ? label : undefined}
+      className={`course-card ${onClick ? 'course-card--button' : ''} ${isNew ? 'is-new' : ''}`}
+      style={{ '--course': `var(--c${colorIndex})` }}
+    >
       <span className="course-card__name">
         {isNew && (
           <span className="course-card__check">
@@ -22,7 +30,7 @@ export function CourseCard({ name, colorIndex, hoursText, isNew = false }) {
         <bdi>{name}</bdi>
       </span>
       <Badge tone="hours">{hoursText}</Badge>
-    </div>
+    </Tag>
   );
 }
 

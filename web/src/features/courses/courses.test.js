@@ -2,7 +2,18 @@ import { describe, expect, it } from 'vitest';
 import mock from '../../data/mock.json';
 import { reducer } from '../../state.jsx';
 import { emptyData } from '../../lib/storage.js';
-import { MAX_COURSES, canAddCourse, draftProblems, hasProblems, makeCourse, newCourseId } from './courses.js';
+import { estimateChapter } from '../estimate/estimate.js';
+import {
+  MAX_COURSES,
+  canAddCourse,
+  colorIndexOf,
+  draftProblems,
+  freeColorIndex,
+  hasProblems,
+  makeCourse,
+  newCourseId,
+  nextOrder,
+} from './courses.js';
 
 const today = '2026-11-24';
 const good = { name: 'الرياضيات ١', files: { lecture: [{}], exercises: [] }, level: 'weak', examDate: '2026-11-30' };
@@ -36,31 +47,97 @@ describe('draftProblems (HANDOFF.md §7 rule 3)', () => {
 
 describe('makeCourse', () => {
   const fromMock = mock.courses[0]; // الرياضيات ١: 3 chapters + 1 exercise file, level weak
-  const read = (ch) => ({ fileName: ch.fileName, fileSizeBytes: ch.fileSizeBytes, kind: ch.kind, metrics: ch.metrics });
-  const course = makeCourse({
-    id: 'c1',
-    name: '  الرياضيات ١ ',
-    level: 'weak',
-    examDate: '2026-11-30',
-    order: 1,
-    readFiles: {
-      lecture: fromMock.chapters.filter((c) => c.kind === 'lecture').map(read),
-      exercises: fromMock.chapters.filter((c) => c.kind === 'exercises').map(read),
-    },
-  });
+  const read = (ch) => ({ read: { fileName: ch.fileName, fileSizeBytes: ch.fileSizeBytes, kind: ch.kind, metrics: ch.metrics }, adjusted: null });
+  const files = {
+    lecture: fromMock.chapters.filter((c) => c.kind === 'lecture').map(read),
+    exercises: fromMock.chapters.filter((c) => c.kind === 'exercises').map(read),
+  };
+  const course = makeCourse({ id: 'c1', name: '  الرياضيات ١ ', level: 'weak', examDate: '2026-11-30', order: 1, color: 1, files });
 
   it('numbers chapters and exercise files separately and estimates each one', () => {
-    expect(course.chapters.map((c) => `${c.kind} ${c.index}`)).toEqual([
-      'lecture 1',
-      'lecture 2',
-      'lecture 3',
-      'exercises 1',
+    expect(course.chapters.map((c) => `${c.kind} ${c.index} ${c.id}`)).toEqual([
+      'lecture 1 c1-ch1',
+      'lecture 2 c1-ch2',
+      'lecture 3 c1-ch3',
+      'exercises 1 c1-ex1',
     ]);
     expect(course.chapters.map((c) => c.estimate)).toEqual(fromMock.chapters.map((c) => c.estimate));
   });
 
-  it('trims the name and picks the colour from the order', () => {
+  it('trims the name and keeps the colour it is given', () => {
     expect(course).toMatchObject({ id: 'c1', name: 'الرياضيات ١', color: '--c1', order: 1 });
+  });
+
+  it('editing: saved files keep their ids, new files get unused ids, numbers follow the screen order', () => {
+    const [ch1, ch2, ch3] = course.chapters;
+    const edited = makeCourse({
+      ...course,
+      color: 1,
+      files: { lecture: [{ saved: ch2 }, { saved: ch3 }, read(fromMock.chapters[0])], exercises: [] },
+    });
+    expect(edited.chapters.map((c) => `${c.index} ${c.id} ${c.fileName}`)).toEqual([
+      '1 c1-ch2 chapter2.pdf',
+      '2 c1-ch3 chapter3.pdf',
+      '3 c1-ch1 chapter1.pdf', // the new file takes the id no longer used
+    ]);
+    expect(ch1.id).toBe('c1-ch1');
+  });
+
+  it('an adjusted file keeps its hours when the level changes; the others are estimated again', () => {
+    const [ch1, ch2] = course.chapters;
+    const edited = makeCourse({
+      ...course,
+      level: 'strong',
+      color: 1,
+      files: { lecture: [{ saved: ch1, adjusted: { loHours: 6, hiHours: 7 } }, { saved: ch2, adjusted: null }], exercises: [] },
+    });
+    expect(edited.chapters[0]).toMatchObject({ adjusted: true, estimate: { loHours: 6, hiHours: 7 } });
+    expect(edited.chapters[0].estimate.reason).toContain('قوي'); // the reason follows the new level
+    expect(edited.chapters[1].adjusted).toBeUndefined();
+    expect(edited.chapters[1].estimate).toEqual(estimateChapter(ch2.metrics, 'strong'));
+  });
+});
+
+describe('course colours (§7 rule 18)', () => {
+  const c = (id, color, order) => ({ id, color, order, chapters: [] });
+  it('reads a token colour, or falls back to the add order', () => {
+    expect(colorIndexOf(c('a', '--c4', 1))).toBe(4);
+    expect(colorIndexOf(c('a', '#8FA3D6', 2))).toBe(2);
+  });
+  it('gives a new course the first colour nobody uses', () => {
+    expect(freeColorIndex([c('a', '--c1', 1), c('b', '--c3', 3)])).toBe(2);
+    expect(freeColorIndex([])).toBe(1);
+  });
+  it('adds new courses after the last one', () => {
+    expect(nextOrder([c('a', '--c1', 1), c('b', '--c3', 3)])).toBe(4);
+  });
+});
+
+describe('editing and deleting in the app state (§7 rule 18)', () => {
+  const plan = { days: [] };
+  const a = { id: 'a', order: 1, color: '--c1', chapters: [{ id: 'a-ch1' }, { id: 'a-ch2' }] };
+  const b = { id: 'b', order: 2, color: '--c2', chapters: [{ id: 'b-ch1' }] };
+  const state = {
+    ...emptyData(),
+    courses: [a, b],
+    plan,
+    progress: { studied: { 'a-ch1': 1, 'a-ch2': 2, 'b-ch1': 1 }, finished: ['a-ch2', 'b-ch1'] },
+  };
+
+  it('an edit keeps the place, drops the plan and the records of removed files', () => {
+    const next = reducer(state, { type: 'updateCourse', course: { ...a, name: 'x', chapters: [{ id: 'a-ch1' }] } });
+    expect(next.courses.map((c) => c.id)).toEqual(['a', 'b']);
+    expect(next.plan).toBeNull();
+    expect(next.progress).toEqual({ studied: { 'a-ch1': 1, 'b-ch1': 1 }, finished: ['b-ch1'] });
+  });
+
+  it('a delete drops the course, its records and the plan; the others keep their colours', () => {
+    const next = reducer(state, { type: 'deleteCourse', id: 'a' });
+    expect(next.courses).toEqual([b]);
+    expect(colorIndexOf(next.courses[0])).toBe(2);
+    expect(next.plan).toBeNull();
+    expect(next.progress).toEqual({ studied: { 'b-ch1': 1 }, finished: ['b-ch1'] });
+    expect(freeColorIndex(next.courses)).toBe(1); // the next new course takes the freed colour
   });
 });
 

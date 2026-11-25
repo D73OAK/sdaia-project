@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import Button from '../../components/Button.jsx';
 import { CourseCard } from '../../components/Cards.jsx';
 import { fmtRange } from '../../lib/format.js';
-import { APP_NAME, BADGE, COURSE_LIMIT, COURSE_LIST as T } from '../../lib/strings.js';
+import { APP_NAME, BADGE, COURSE_EDIT, COURSE_LIMIT, COURSE_LIST as T } from '../../lib/strings.js';
 import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
 import { courseTotal } from '../estimate/estimate.js';
 import PlanFlow from '../schedule/PlanFlow.jsx';
-import { canAddCourse } from './courses.js';
+import { canAddCourse, colorIndexOf } from './courses.js';
 import './course-list.css';
 
 export default function CourseListScreen() {
@@ -42,9 +42,11 @@ export default function CourseListScreen() {
               <li key={c.id}>
                 <CourseCard
                   name={c.name}
-                  colorIndex={c.order}
+                  colorIndex={colorIndexOf(c)}
                   hoursText={BADGE.hours(fmtRange(total.loHours, total.hiHours), total.hiHours)}
                   isNew={c.id === newId}
+                  onClick={() => go(ROUTES.courseEdit(c.id))}
+                  label={`${COURSE_EDIT.openCourse(c.name)}، ${BADGE.hours(fmtRange(total.loHours, total.hiHours), total.hiHours)}`}
                 />
               </li>
             );

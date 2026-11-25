@@ -1,5 +1,6 @@
 // view.js: small pure helpers that turn a saved plan into what the screens show. No UI here.
 import { addDays } from './schedule.js';
+import { colorIndexOf } from '../courses/courses.js';
 
 export const DAYS_PER_WEEK = 7;
 
@@ -40,7 +41,7 @@ export function sessionParts(session, index) {
         chapterId: p.chapterId,
         hours: p.hours,
         courseName: found.course.name,
-        colorIndex: found.course.order,
+        colorIndex: colorIndexOf(found.course),
         kind: found.chapter.kind,
         index: found.chapter.index,
         course: found.course,
@@ -52,3 +53,13 @@ export function sessionParts(session, index) {
 
 // The session in time slot `slot` of a plan day, or undefined.
 export const sessionAt = (day, slot) => day?.sessions.find((s) => s.slot === slot);
+
+// What the schedule shows (HANDOFF.md §7 rule 16): today is the first, highlighted column («اليوم») when the
+// saved plan has sessions today; otherwise the schedule starts tomorrow («بكرة»).
+// Returns { plan (only the days shown), highlight (its date), label ('today' | 'tomorrow') }.
+export function visiblePlan(plan, today) {
+  const todayDay = plan.days.find((d) => d.date === today);
+  if (todayDay && todayDay.sessions.length > 0) return { plan, highlight: today, label: 'today' };
+  const tomorrow = addDays(today, 1);
+  return { plan: { ...plan, days: plan.days.filter((d) => d.date >= tomorrow) }, highlight: tomorrow, label: 'tomorrow' };
+}

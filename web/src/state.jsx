@@ -4,7 +4,8 @@
 import { createContext, useContext, useEffect, useReducer } from 'react';
 import { clearData, emptyData, loadData, saveData } from './lib/storage.js';
 import { canAddCourse } from './features/courses/courses.js';
-import { settlePlan } from './features/schedule/progress.js';
+import { pruneProgress, settlePlan } from './features/schedule/progress.js';
+import { swapSessions } from './features/schedule/swap.js';
 import { localToday } from './lib/options.js';
 
 // The actions (HANDOFF.md §6). More are added as the screens are built.
@@ -17,6 +18,18 @@ export function reducer(state, action) {
       if (!canAddCourse(state.courses)) return state;
       // A new course changes what the schedule needs, so the old plan is dropped.
       return { ...state, courses: [...state.courses, action.course], plan: null, lastAddedId: action.course.id };
+    case 'updateCourse': {
+      // «احفظ التعديل» (HANDOFF.md §7 rule 18): the course keeps its place and colour; the plan is dropped;
+      // records of files that were removed go too.
+      const courses = state.courses.map((c) => (c.id === action.course.id ? action.course : c));
+      return { ...state, courses, plan: null, progress: pruneProgress(state.progress, courses) };
+    }
+    case 'deleteCourse': {
+      const courses = state.courses.filter((c) => c.id !== action.id);
+      return { ...state, courses, plan: null, progress: pruneProgress(state.progress, courses) };
+    }
+    case 'swap': // «بدّل بين جلستين» (§7 rule 13): two whole sessions trade places; saved with the plan
+      return state.plan ? { ...state, plan: swapSessions(state.plan, action.a, action.b) } : state;
     case 'seenNew': // the course list has shown the ✓ for the new course
       return state.lastAddedId ? { ...state, lastAddedId: null } : state;
     case 'setPlan': // «اطلع جدولي»: the preferences and the plan built from them

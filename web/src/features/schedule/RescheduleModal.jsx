@@ -12,6 +12,7 @@ import { useApp } from '../../state.jsx';
 import { activeCourses, applyChecks, isFinished, minutesLeft } from './progress.js';
 import { buildPlan, studyOrder } from './schedule.js';
 import { needsShortPopup } from './view.js';
+import { colorIndexOf } from '../courses/courses.js';
 
 // onDone({ short }) runs after the new plan is saved: short = show popup 3b.
 export default function RescheduleModal({ onClose, onDone }) {
@@ -36,7 +37,7 @@ export default function RescheduleModal({ onClose, onDone }) {
       <form className="reschedule" noValidate onSubmit={submit}>
         <p className="reschedule__hint">{T.hint}</p>
         {courses.map((course) => (
-          <fieldset key={course.id} className="reschedule__course" style={{ '--course': `var(--c${course.order})` }}>
+          <fieldset key={course.id} className="reschedule__course" style={{ '--course': `var(--c${colorIndexOf(course)})` }}>
             <legend className="reschedule__name">
               <span className="reschedule__dot" aria-hidden="true" />
               <bdi>{course.name}</bdi>

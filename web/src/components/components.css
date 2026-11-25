@@ -280,6 +280,39 @@
 .chip__remove {
   background: transparent;
 }
+/* The file's hours range with − and + (HANDOFF.md §7 rule 19). */
+.chip__estimate {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--hours-bg);
+  color: var(--hours-ink);
+}
+.chip__range {
+  min-inline-size: 5.5em;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  white-space: nowrap;
+}
+.chip__step {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.chip__step:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.chip__step:disabled {
+  color: var(--disabled-ink);
+  cursor: not-allowed;
+}
 .chip--error {
   flex-direction: column;
   align-items: start;
@@ -330,6 +363,19 @@
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   line-height: var(--leading-lg);
+}
+/* As a button: full width, keeps the card look, rises a little under the mouse. */
+.course-card--button {
+  inline-size: 100%;
+  min-height: var(--tap);
+  border: 0;
+  color: var(--ink);
+  text-align: start;
+  cursor: pointer;
+  transition: transform var(--dur-press);
+}
+.course-card--button:hover {
+  transform: translateY(-2px);
 }
 .course-card + .course-card {
   margin-block-start: var(--space-card-gap);

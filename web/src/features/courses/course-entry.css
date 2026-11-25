@@ -14,3 +14,21 @@
   margin-block-end: var(--space-2);
   font-weight: var(--weight-bold);
 }
+
+.course-entry__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+/* The course total under the two zones (HANDOFF.md §7 rule 19). */
+.course-entry__total {
+  margin-block: var(--space-1) 0;
+  margin-inline-start: calc(var(--label-width) + var(--space-2));
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+}
+@media (max-width: 600px) {
+  .course-entry__total {
+    margin-inline-start: 0;
+  }
+}

@@ -1,22 +1,44 @@
-// Screen 2: course entry (HANDOFF.md §2). One course at a time: name, chapter files, optional exercise
-// files, level, exam date, «احفظ المادة».
-// Files: a quick check (real PDF header, size) runs as soon as a file is picked, so «مو PDF» and «أكبر من
-// ٤٠ ميقا» show at once. The full reading (pages, text, scans, locked files) runs on «احفظ المادة», behind the
-// loading overlay. Files stay in this screen only; just the counted numbers are saved (lib/storage.js).
-import { useRef, useState } from 'react';
+// Screen 2: course entry (HANDOFF.md §2), for a new course or, with `courseId`, in edit mode.
+// One course at a time: name, chapter files, optional exercise files, level, exam date.
+// Files are read as soon as they are picked, behind the loading overlay: the quick checks (real PDF header,
+// size) first, then the full reading (pages, text, scans, locked files). A healthy file then shows its hours
+// range with − and + (§7 rule 19) once a level is chosen. Only the counted numbers are saved, never the PDF.
+// Edit mode (§7 rule 18): the saved files show as chips by name; «احذف المادة» asks before deleting.
+import { useEffect, useRef, useState } from 'react';
 import Button from '../../components/Button.jsx';
 import { Card } from '../../components/Cards.jsx';
 import { Input, Select } from '../../components/Field.jsx';
 import LoadingOverlay from '../../components/LoadingOverlay.jsx';
+import Modal from '../../components/Modal.jsx';
 import Pills from '../../components/Pills.jsx';
 import { FileChip, UploadZone } from '../../components/Upload.jsx';
-import { fmtNumber } from '../../lib/format.js';
+import { fmtNumber, fmtRange } from '../../lib/format.js';
 import { dateOptions, localToday } from '../../lib/options.js';
 import { checkFile, readChapter } from '../../lib/pdf.js';
-import { APP_NAME, COMMON, COURSE_FORM as T, COURSE_LIMIT, FILE_ERROR, LEVEL_LABEL, loadingText } from '../../lib/strings.js';
+import {
+  ADJUST,
+  APP_NAME,
+  COMMON,
+  COURSE_EDIT,
+  COURSE_FORM as T,
+  COURSE_LIMIT,
+  FILE_ERROR,
+  LEVEL_LABEL,
+  loadingText,
+} from '../../lib/strings.js';
 import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
-import { canAddCourse, draftProblems, hasProblems, makeCourse, newCourseId } from './courses.js';
+import { STEP_HOURS, estimateChapter, shiftRange } from '../estimate/estimate.js';
+import {
+  canAddCourse,
+  colorIndexOf,
+  draftProblems,
+  freeColorIndex,
+  hasProblems,
+  makeCourse,
+  newCourseId,
+  nextOrder,
+} from './courses.js';
 import './course-entry.css';
 
 const KINDS = ['lecture', 'exercises'];
@@ -25,7 +47,7 @@ const MIN_LOADING_MS = 700; // so the loading text can be read even when the fil
 const DONE_MS = 700; // how long «انحفظت المادة» shows before the course list opens
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// The field ids, in screen order: the first one with a problem gets the focus after «احفظ المادة».
+// The field ids, in screen order: the first one with a problem gets the focus after saving.
 const FIELD_ID = {
   name: 'course-name',
   lecture: 'zone-lecture',
@@ -41,23 +63,39 @@ function focusField(id) {
   target?.focus();
 }
 
-let nextKey = 1; // a stable key for each picked file in this screen
+let nextKey = 1; // a stable key for each file on this screen
 
-// A picked file: { key, file, error?, read? }. `read` is what readChapter returned (cached, never read twice).
-async function toEntry(file) {
-  return { key: nextKey++, file, error: (await checkFile(file)) ?? undefined };
-}
+// A file on this screen:
+//   { key, name, file?, saved?, read?, error?, adjusted }
+//   file     a File picked now (kept in memory only, never saved)
+//   saved    the chapter saved before (edit mode)
+//   read     what readChapter returned (metrics …), or the saved chapter's numbers
+//   adjusted { loHours, hiHours } after − / +, else null
+const fromSaved = (ch) => ({
+  key: nextKey++,
+  name: ch.fileName,
+  saved: ch,
+  read: { fileName: ch.fileName, fileSizeBytes: ch.fileSizeBytes, kind: ch.kind, metrics: ch.metrics },
+  adjusted: ch.adjusted ? { loHours: ch.estimate.loHours, hiHours: ch.estimate.hiHours } : null,
+});
+const fromPicked = (file) => ({ key: nextKey++, name: file.name, file, adjusted: null });
 
-export default function CourseEntryScreen() {
+export default function CourseEntryScreen({ courseId }) {
   const { state, dispatch } = useApp();
   const today = localToday();
-  const [name, setName] = useState('');
-  const [files, setFiles] = useState({ lecture: [], exercises: [] });
-  const [level, setLevel] = useState(null);
-  const [examDate, setExamDate] = useState('');
-  const [submitted, setSubmitted] = useState(false); // field errors show after the first «احفظ المادة»
-  const [loading, setLoading] = useState(null); // { done, total } while reading
+  const editing = courseId ? state.courses.find((c) => c.id === courseId) : null;
+
+  const [name, setName] = useState(editing?.name ?? '');
+  const [level, setLevel] = useState(editing?.level ?? null);
+  const [examDate, setExamDate] = useState(editing?.examDate ?? '');
+  const [files, setFiles] = useState(() => ({
+    lecture: editing ? editing.chapters.filter((c) => c.kind !== 'exercises').map(fromSaved) : [],
+    exercises: editing ? editing.chapters.filter((c) => c.kind === 'exercises').map(fromSaved) : [],
+  }));
+  const [submitted, setSubmitted] = useState(false); // field errors show after the first save
+  const [loading, setLoading] = useState(null); // { done, total } while reading picked files
   const [saved, setSaved] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const reupload = useRef({ input: null, kind: null, key: null });
 
   const backTo = state.courses.length ? ROUTES.courses : ROUTES.home;
@@ -70,11 +108,26 @@ export default function CourseEntryScreen() {
     return undefined;
   };
 
-  // HANDOFF.md §7 rule 4: at 6 courses this screen only explains the limit.
-  if (!canAddCourse(state.courses) && !saved) {
+  // The hours of a healthy file: its own adjusted range, or the estimate for the chosen level.
+  const rangeOf = (f) => {
+    if (f.error || !f.read?.metrics || !level) return null;
+    return f.adjusted ?? estimateChapter(f.read.metrics, level);
+  };
+  const healthy = KINDS.flatMap((k) => files[k]).map(rangeOf).filter(Boolean);
+  const total = healthy.reduce((s, r) => ({ lo: s.lo + r.loHours, hi: s.hi + r.hiHours }), { lo: 0, hi: 0 });
+
+  // A course id that no longer exists (deleted elsewhere): back to the list.
+  const missing = Boolean(courseId && !editing && !saved);
+  useEffect(() => {
+    if (missing) go(ROUTES.courses);
+  }, [missing]);
+  if (missing) return null;
+
+  // HANDOFF.md §7 rule 4: at 6 courses a NEW course is not possible; this screen only explains the limit.
+  if (!editing && !canAddCourse(state.courses) && !saved) {
     return (
       <section className="screen course-entry" aria-labelledby="course-title">
-        <TopBar />
+        <TopBar title={T.title} />
         <Card>
           <p className="course-entry__limit">{COURSE_LIMIT}</p>
           <Button variant="link" onClick={() => go(backTo)}>
@@ -85,19 +138,54 @@ export default function CourseEntryScreen() {
     );
   }
 
-  async function addFiles(kind, picked) {
-    const entries = await Promise.all(picked.map(toEntry));
+  // Checks and reads the picked files one at a time (the loading overlay shows meanwhile).
+  async function readPicked(kind, entries) {
+    const started = Date.now();
+    setLoading({ done: 0, total: entries.length });
+    const results = new Map();
+    for (const [i, entry] of entries.entries()) {
+      const quick = await checkFile(entry.file);
+      if (quick) results.set(entry.key, { error: quick });
+      else {
+        const read = await readChapter(entry.file, kind);
+        results.set(entry.key, read.error ? { error: read.error } : { read });
+      }
+      setLoading({ done: i + 1, total: entries.length });
+    }
+    await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - started)));
+    setFiles((prev) => ({
+      ...prev,
+      [kind]: prev[kind].map((f) => (results.has(f.key) ? { ...f, ...results.get(f.key) } : f)),
+    }));
+    setLoading(null);
+  }
+
+  function addFiles(kind, picked) {
+    const entries = picked.map(fromPicked);
     setFiles((prev) => ({ ...prev, [kind]: [...prev[kind], ...entries] }));
+    readPicked(kind, entries);
   }
 
   // Files are found by their key, never by their position: two quick clicks must not hit the wrong file.
-  async function replaceFile(kind, key, picked) {
-    const entry = await toEntry(picked[0]);
+  function replaceFile(kind, key, picked) {
+    const entry = fromPicked(picked[0]);
     setFiles((prev) => ({ ...prev, [kind]: prev[kind].map((f) => (f.key === key ? entry : f)) }));
+    readPicked(kind, [entry]);
   }
 
   const removeFile = (kind, key) =>
     setFiles((prev) => ({ ...prev, [kind]: prev[kind].filter((f) => f.key !== key) }));
+
+  function adjust(kind, key, step) {
+    setFiles((prev) => ({
+      ...prev,
+      [kind]: prev[kind].map((f) => {
+        if (f.key !== key) return f;
+        const next = shiftRange(rangeOf(f), step);
+        return next ? { ...f, adjusted: next } : f;
+      }),
+    }));
+  }
 
   function askReupload(kind, key) {
     reupload.current.kind = kind;
@@ -113,52 +201,34 @@ export default function CourseEntryScreen() {
       focusField(FIELD_ID[first]);
       return;
     }
-
-    // Read every file that was not read yet (one at a time keeps memory low).
-    const all = KINDS.flatMap((kind) => files[kind].map((entry) => ({ kind, entry })));
-    const toRead = all.filter(({ entry }) => !entry.read);
-    const started = Date.now();
-    setLoading({ done: 0, total: toRead.length });
-    const results = new Map();
-    for (const [i, { kind, entry }] of toRead.entries()) {
-      results.set(entry.key, await readChapter(entry.file, kind));
-      setLoading({ done: i + 1, total: toRead.length });
-    }
-    await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - started)));
-
-    const next = {};
-    for (const kind of KINDS) {
-      next[kind] = files[kind].map((entry) => {
-        const read = results.get(entry.key) ?? entry.read;
-        return { ...entry, read, error: read.error };
-      });
-    }
-    setFiles(next);
-    setLoading(null);
-
-    // A scanned or locked file turns its chip into an error; nothing is saved until it is fixed.
-    if (KINDS.some((kind) => next[kind].some((f) => f.error))) {
-      focusField(next.lecture.some((f) => f.error) ? FIELD_ID.lecture : FIELD_ID.exercises);
-      return;
-    }
-
     const course = makeCourse({
-      id: newCourseId(state.courses),
+      id: editing?.id ?? newCourseId(state.courses),
       name,
       level,
       examDate,
-      order: state.courses.length + 1,
-      readFiles: { lecture: next.lecture.map((f) => f.read), exercises: next.exercises.map((f) => f.read) },
+      order: editing?.order ?? nextOrder(state.courses),
+      color: editing ? colorIndexOf(editing) : freeColorIndex(state.courses),
+      files: {
+        lecture: files.lecture.map((f) => ({ saved: f.saved, read: f.read, adjusted: f.adjusted })),
+        exercises: files.exercises.map((f) => ({ saved: f.saved, read: f.read, adjusted: f.adjusted })),
+      },
     });
-    dispatch({ type: 'addCourse', course });
+    dispatch(editing ? { type: 'updateCourse', course } : { type: 'addCourse', course });
     setSaved(true);
     await wait(DONE_MS);
     go(ROUTES.courses);
   }
 
+  function deleteCourse() {
+    setConfirmDelete(false);
+    setSaved(true); // the course is gone: do not bounce back to the list from the check above
+    dispatch({ type: 'deleteCourse', id: editing.id });
+    go(ROUTES.courses);
+  }
+
   return (
     <section className="screen course-entry" aria-labelledby="course-title">
-      <TopBar />
+      <TopBar title={editing ? COURSE_EDIT.title : T.title} />
       <Card>
         <form
           noValidate
@@ -186,17 +256,34 @@ export default function CourseEntryScreen() {
               onFiles={(picked) => addFiles(kind, picked)}
             >
               {files[kind].length > 0 &&
-                files[kind].map((f) => (
-                  <FileChip
-                    key={f.key}
-                    name={f.file.name}
-                    error={f.error && FILE_ERROR[f.error]}
-                    onRemove={() => removeFile(kind, f.key)}
-                    onReupload={() => askReupload(kind, f.key)}
-                  />
-                ))}
+                files[kind].map((f) => {
+                  const range = rangeOf(f);
+                  return (
+                    <FileChip
+                      key={f.key}
+                      name={f.name}
+                      error={f.error && FILE_ERROR[f.error]}
+                      onRemove={() => removeFile(kind, f.key)}
+                      onReupload={() => askReupload(kind, f.key)}
+                      estimate={
+                        range && {
+                          text: ADJUST.range(fmtRange(range.loHours, range.hiHours)),
+                          canLess: Boolean(shiftRange(range, -STEP_HOURS)),
+                          onLess: () => adjust(kind, f.key, -STEP_HOURS),
+                          onMore: () => adjust(kind, f.key, STEP_HOURS),
+                        }
+                      }
+                    />
+                  );
+                })}
             </UploadZone>
           ))}
+
+          {healthy.length > 0 && (
+            <p className="course-entry__total" aria-live="polite">
+              {ADJUST.total(fmtRange(total.lo, total.hi), total.hi)}
+            </p>
+          )}
 
           <Pills
             id={FIELD_ID.level}
@@ -219,11 +306,18 @@ export default function CourseEntryScreen() {
           />
 
           <div className="course-entry__actions">
-            <Button variant="link" onClick={() => go(backTo)}>
-              {COMMON.back}
-            </Button>
+            <div className="course-entry__links">
+              <Button variant="link" onClick={() => go(backTo)}>
+                {COMMON.back}
+              </Button>
+              {editing && (
+                <Button variant="link" className="course-entry__delete" onClick={() => setConfirmDelete(true)}>
+                  {COURSE_EDIT.delete}
+                </Button>
+              )}
+            </div>
             <Button type="submit" status={saved ? 'done' : undefined}>
-              {T.save}
+              {editing ? COURSE_EDIT.save : T.save}
             </Button>
           </div>
         </form>
@@ -247,14 +341,34 @@ export default function CourseEntryScreen() {
       {loading && (
         <LoadingOverlay text={loadingText(loading.total, fmtNumber(loading.total))} done={loading.done} total={loading.total} />
       )}
+
+      {editing && (
+        <Modal
+          open={confirmDelete}
+          title={COURSE_EDIT.deleteTitle}
+          onClose={() => setConfirmDelete(false)}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
+                {COURSE_EDIT.deleteNo}
+              </Button>
+              <Button onClick={deleteCourse}>{COURSE_EDIT.deleteYes}</Button>
+            </>
+          }
+        >
+          <p>
+            {COURSE_EDIT.deleteText.before} <bdi>{editing.name}</bdi> {COURSE_EDIT.deleteText.after}
+          </p>
+        </Modal>
+      )}
     </section>
   );
 }
 
-function TopBar() {
+function TopBar({ title }) {
   return (
     <div className="topbar">
-      <h1 id="course-title">{T.title}</h1>
+      <h1 id="course-title">{title}</h1>
       <span className="topbar__app">{APP_NAME}</span>
     </div>
   );

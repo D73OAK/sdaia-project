@@ -56,6 +56,7 @@ export const SESSION = {
   breakLabel: (minutesText) => `بريك ${minutesText} د`,
   exam: 'اختبار', // followed by the course name(s) in <bdi>
   tomorrow: 'بكرة',
+  today: 'اليوم', // §8: the first column when today still has sessions
 };
 
 // §8 + HANDOFF.md §2 4a: the «تبدأ من جديد؟» popup. Also asked before the demo replaces saved courses.
@@ -136,6 +137,38 @@ export const TOOLTIP = {
 export const PRINT = {
   button: 'حمّل جدولك PDF',
   date: (dateText) => dateText, // today, «الأربعاء ٢٥ نوفمبر»
+};
+
+// Screen 4 when every exam has passed (§8).
+export const ALL_PASSED = 'خلصت اختباراتك كلها. إذا عندك اختبارات جديدة، ابدأ من جديد ورتّب جدولك.';
+
+// «بدّل بين جلستين» (§8; the hint is word for word).
+export const SWAP = {
+  button: 'بدّل بين جلستين',
+  done: 'خلصت التبديل',
+  hint: 'اختر جلسة، وبعدها اختر الجلسة اللي تبي تبدّل معها',
+};
+
+// Screen 2 in edit mode, and popup 2a (§8).
+export const COURSE_EDIT = {
+  title: 'عدّل المادة',
+  save: 'احفظ التعديل',
+  delete: 'احذف المادة',
+  deleteTitle: 'تحذف المادة؟',
+  // «بتنحذف {المادة} من موادك وجدولك.»: the name goes between, in <bdi>
+  deleteText: { before: 'بتنحذف', after: 'من موادك وجدولك.' },
+  deleteNo: 'لا، خلّها',
+  deleteYes: 'ايه، احذفها',
+  openCourse: (name) => `عدّل ${name}`, // the course card, for screen readers
+};
+
+// − / + on a file (§7 rule 19). The total and the tooltip line are §8.
+export const ADJUST = {
+  range: (rangeText) => `${rangeText} س`,
+  less: (fileName) => `نقّص نص ساعة من ${fileName}`,
+  more: (fileName) => `زد نص ساعة على ${fileName}`,
+  total: (rangeText, hi) => `مجموع المادة: ${rangeText} ${HOURS_UNIT(hi)}`,
+  tooltipLine: 'عدّلت وقتها بنفسك',
 };
 
 // Popup 4b: reschedule from what was finished (HANDOFF.md §8, Version 4).

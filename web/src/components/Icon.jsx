@@ -7,6 +7,8 @@ const PATHS = {
   cup: 'M3 6h11v5q0 5-5.5 5T3 11Z M14 8q4 0 4 3t-4 3',
   check: 'M3 10l5 5 9-10',
   close: 'M5 5l10 10M15 5 5 15',
+  minus: 'M4 10h12',
+  plus: 'M4 10h12M10 4v12',
 };
 
 export default function Icon({ name, size = 18 }) {

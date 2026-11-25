@@ -70,10 +70,15 @@
 .btn--loading {
   cursor: progress;
 }
-.btn--done {
+/* done: mint, no shadow, and it stays still under the mouse (the click that saved is still hovering it). */
+.btn.btn--done,
+.btn.btn--done:hover,
+.btn.btn--done:active {
   background: var(--mint);
   color: var(--ink);
   box-shadow: none;
+  transform: none;
+  filter: none;
 }
 .btn:disabled {
   background: var(--disabled-bg);

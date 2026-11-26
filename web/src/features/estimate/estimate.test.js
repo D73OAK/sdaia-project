@@ -80,28 +80,46 @@ describe('shiftRange (− / + on a file)', () => {
   });
 });
 
-describe('estimateWithDifficulty (Version 4.6: the AI judges, the formula measures)', () => {
-  const m = { pages: 40, density: 'mid', equations: 10, exercises: 2 }; // formula (mid) 2.5–3.5
+describe('estimateWithDifficulty (Version 4.7: the multiplier joins the level before rounding)', () => {
+  const m = { pages: 40, density: 'mid', equations: 10, exercises: 2 }; // base 2.44, formula (mid) 2.5–3.5
 
   it('keeps the multipliers in ESTIMATE_CONFIG', () =>
     expect(ESTIMATE_CONFIG.difficultyMultiplier).toEqual({ 1: 0.7, 2: 0.85, 3: 1, 4: 1.2, 5: 1.4 }));
 
   it.each([
-    [1, 2, 3], // round½(2.5 × 0.7 = 1.75) = 2, hi round½(2.8) = 3
-    [2, 2, 3], // round½(2.125) = 2
+    [1, 1.5, 2], // round½(2.44 × 0.7 = 1.708) = 1.5, hi round½(2.1) = 2
+    [2, 2, 3], // round½(2.074) = 2, hi round½(2.8) = 3
     [3, 2.5, 3.5], // difficulty 3 is the formula itself
-    [4, 3, 4], // round½(3) = 3, hi round½(4.2) = 4
-    [5, 3.5, 5], // round½(3.5) = 3.5, hi round½(4.9) = 5
+    [4, 3, 4], // round½(2.928) = 3, hi round½(4.2) = 4
+    [5, 3.5, 5], // round½(3.416) = 3.5, hi round½(4.9) = 5
   ])('difficulty %i -> %s–%s h', (d, lo, hi) =>
     expect(estimateWithDifficulty(m, 'mid', d)).toMatchObject({ loHours: lo, hiHours: hi }));
+
+  it('counts on short files: 1.05 h × 1.2 is 1.26 -> 1.5, not rounded back to 1 first', () => {
+    const short = { pages: 28, density: 'low', equations: 0, exercises: 0 }; // base 1.05, formula 1–1.5
+    expect(estimateChapter(short, 'mid')).toMatchObject({ loHours: 1, hiHours: 1.5 });
+    expect(estimateWithDifficulty(short, 'mid', 4)).toMatchObject({ loHours: 1.5, hiHours: 2 });
+  });
+
+  it('difficulty 3 gives exactly the formula, for every level and many sizes', () => {
+    for (const level of ['strong', 'mid', 'weak'])
+      for (const density of ['low', 'mid', 'high'])
+        for (let pages = 1; pages <= 120; pages += 7)
+          for (const equations of [0, 9, 40])
+            for (const exercises of [0, 3, 11]) {
+              const x = { pages, density, equations, exercises };
+              expect(estimateWithDifficulty(x, level, 3)).toEqual(estimateChapter(x, level));
+            }
+  });
 
   it('never goes under half an hour', () => {
     const tiny = { pages: 10, density: 'low', equations: 0, exercises: 0 }; // formula 0.5–0.5
     expect(estimateWithDifficulty(tiny, 'mid', 1)).toMatchObject({ loHours: 0.5, hiHours: 0.5 });
   });
 
-  it('keeps the formula reason and applies the level through the formula', () => {
-    expect(estimateWithDifficulty(m, 'weak', 3)).toEqual(estimateChapter(m, 'weak'));
+  it('applies the level and the difficulty together: weak × 4', () => {
+    // 2.44 × 1.4 × 1.2 = 4.0992 -> 4, hi round½(5.6) = 5.5
+    expect(estimateWithDifficulty(m, 'weak', 4)).toMatchObject({ loHours: 4, hiHours: 5.5, reason: estimateChapter(m, 'weak').reason });
   });
 
   it('rejects an unknown difficulty', () => expect(() => estimateWithDifficulty(m, 'mid', 6)).toThrow());

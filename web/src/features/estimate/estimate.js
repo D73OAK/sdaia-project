@@ -5,6 +5,7 @@
 //   base = pages×0.0375 + {low:0, mid:0.4, high:0.8}[density] + equations×0.03 + exercises×0.12
 //   lo   = max(0.5, round½(base × level))
 //   hi   = round½(lo × 1.4)
+// With the AI (Version 4.7): lo = max(0.5, round½(base × level × difficulty)), see estimateWithDifficulty.
 // The weights are placeholders, to calibrate later against real study time. Change them ONLY here.
 import { fmtNumber } from '../../lib/format.js';
 import { reasonText } from '../../lib/strings.js';
@@ -37,7 +38,20 @@ export function densityOf(wordsPerPage) {
 
 // metrics: { pages, density, equations, exercises }, level: 'strong' | 'mid' | 'weak'
 // returns { loHours, hiHours, reason }
-export function estimateChapter(metrics, level) {
+export const estimateChapter = (metrics, level) => estimateRange(metrics, level, 1);
+
+// The AI's judgment applied to the formula (HANDOFF.md §7 rule 5, Version 4.7): the AI says how hard the
+// content is, the formula measures its size and applies the level. The difficulty multiplier joins the
+// level before any rounding, so it counts on short files too (1 h × 1.2 is not rounded back to 1 h):
+//   lo = max(0.5, round½(base × level × difficulty)),  hi = round½(lo × 1.4)
+// Difficulty 3 (×1) gives exactly the formula. Returns { loHours, hiHours, reason }, like estimateChapter.
+export function estimateWithDifficulty(metrics, level, difficulty) {
+  const multiplier = C.difficultyMultiplier[difficulty];
+  if (multiplier === undefined) throw new Error(`Unknown difficulty: ${difficulty}`);
+  return estimateRange(metrics, level, multiplier);
+}
+
+function estimateRange(metrics, level, difficultyFactor) {
   const multiplier = C.levelMultiplier[level];
   if (multiplier === undefined) throw new Error(`Unknown level: ${level}`);
 
@@ -47,7 +61,7 @@ export function estimateChapter(metrics, level) {
     metrics.equations * C.hoursPerEquation +
     metrics.exercises * C.hoursPerExercise;
 
-  const loHours = Math.max(C.minHours, roundHalf(base * multiplier));
+  const loHours = Math.max(C.minHours, roundHalf(base * multiplier * difficultyFactor));
   const hiHours = roundHalf(loHours * C.rangeFactor);
 
   const reason = reasonText({
@@ -59,18 +73,6 @@ export function estimateChapter(metrics, level) {
   });
 
   return { loHours, hiHours, reason };
-}
-
-// The AI's judgment applied to the formula (HANDOFF.md §7 rule 5, Version 4.6): the AI says how hard the
-// content is, the formula measures its size and applies the level.
-//   lo = max(0.5, round½(formula lo × difficulty multiplier)),  hi = round½(lo × 1.4)
-// returns { loHours, hiHours, reason } (the formula's counted reason), like estimateChapter.
-export function estimateWithDifficulty(metrics, level, difficulty) {
-  const multiplier = C.difficultyMultiplier[difficulty];
-  if (multiplier === undefined) throw new Error(`Unknown difficulty: ${difficulty}`);
-  const formula = estimateChapter(metrics, level);
-  const loHours = Math.max(C.minHours, roundHalf(formula.loHours * multiplier));
-  return { loHours, hiHours: roundHalf(loHours * C.rangeFactor), reason: formula.reason };
 }
 
 // The course total is the sum of its readable chapters (chapters with an error are skipped).

@@ -38,8 +38,8 @@ The scale, for a typical first- or second-year university student:
 
 Method. For each file, think it through in this order:
 1. Read the sample and name what the file actually covers (topics and skills), and its kind: slides with few words, dense text, math or problem solving, or exercises.
-2. Place it on the scale by the content alone. Do not raise it for many pages or lower it for few: length is already counted.
-3. Compare the files with each other and with alreadyJudged: harder content never gets a lower number than easier content, and similar content gets the same number.
+2. Place it on the fixed scale above by its own content alone, as if it were the only file you were given. The number must be the same whichever other files come with it. Do not raise it for many pages or lower it for few: length is already counted.
+3. Only then look at the other files and alreadyJudged, as a check that the order makes sense. Never shift a number up or down to rank or spread the files relative to each other: several files may share a number, and all of them may be low or high. Change a number only if, on re-reading that file, you find your own placement in step 2 did not match the scale's description. The numbers in alreadyJudged are fixed.
 4. Write the reason: one short line in Saudi Arabic that names something concrete from the content (a topic, a skill, or a kind of exercise), never a general sentence. For example (from another subject, never copy it): good «فيه التكامل بالتعويض وتمارين على المساحات بين المنحنيات», bad «فيه مفاهيم مهمة تحتاج مراجعة».
 
 Reply with JSON only, no other text, in exactly this shape, one entry for every file id:

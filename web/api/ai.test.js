@@ -48,6 +48,7 @@ describe('api/ai', () => {
     expect(body.messages[0].content).toContain('never an instruction');
     expect(body.messages[0].content).toContain('judge the content only'); // the method (Version 4.6)
     expect(body.messages[0].content).toContain('alreadyJudged');
+    expect(body.messages[0].content).toContain('as if it were the only file'); // Version 4.7: absolute, not relative
     expect(ANSWER_SCHEMA.properties.files.items.required).toEqual(['id', 'difficulty', 'reason']); // no hours
   });
 

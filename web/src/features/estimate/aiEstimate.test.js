@@ -44,7 +44,7 @@ describe('estimateCourse: the AI judges the difficulty, the formula measures the
     );
     const out = await estimateCourse(course);
     expect(fetch).toHaveBeenCalledTimes(1);
-    // f1: lo = round½(2.5 × 1.2) = 3, hi = round½(3 × 1.4) = 4
+    // f1: lo = round½(base 2.44 × 1.2 = 2.93) = 3, hi = round½(3 × 1.4) = 4
     expect(out.get(1)).toEqual({
       loHours: 3,
       hiHours: 4,
@@ -53,8 +53,8 @@ describe('estimateCourse: the AI judges the difficulty, the formula measures the
       aiReason: 'فيه اجتياز الأشجار تحتاج تتبّع',
       difficulty: 4,
     });
-    expect(out.get(2)).toMatchObject({ loHours: 1, hiHours: 1.5, source: 'ai', difficulty: 2 }); // 1 × 0.85
-    expect(out.get(3)).toMatchObject({ loHours: 2, hiHours: 3, source: 'ai', difficulty: 5 }); // 1.5 × 1.4
+    expect(out.get(2)).toMatchObject({ loHours: 0.5, hiHours: 0.5, source: 'ai', difficulty: 2 }); // base 0.87 × 0.85 = 0.74
+    expect(out.get(3)).toMatchObject({ loHours: 2, hiHours: 3, source: 'ai', difficulty: 5 }); // base 1.405 × 1.4 = 1.97
   });
 
   it('gives the same hours for the same difficulty, every time', async () => {

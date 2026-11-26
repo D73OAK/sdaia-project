@@ -24,8 +24,9 @@ v1 decisions (approved 2026-11-24):
   file's label, kind, density, equation and exercise counts and a text sample (~1500 chars, never stored);
   no level, pages or formula range. Saved files already judged go along as context only. The AI returns
   only a difficulty 1–5 (about the content, not the student) and a reason. Hours = the formula range scaled
-  by `ESTIMATE_CONFIG.difficultyMultiplier` (1 ×0.7 … 5 ×1.4), lo = max(0.5, round½(formula lo × m)),
-  hi = round½(lo × 1.4). reasoning_effort medium, max_tokens 4000. A missing or broken answer, a failed
+  by `ESTIMATE_CONFIG.difficultyMultiplier` (1 ×0.7 … 5 ×1.4), applied before rounding (Version 4.7):
+  lo = max(0.5, round½(base × level × m)), hi = round½(lo × 1.4); difficulty 3 = exactly the formula.
+  Each file is placed on the fixed scale by its own content first; comparing files only checks the order. reasoning_effort medium, max_tokens 4000. A missing or broken answer, a failed
   call, a 30 s timeout or a missing key means the plain formula (never an assumed 3), with no error shown.
   A saved file keeps its difficulty; a level change recomputes its hours without a call. Hand-adjusted
   files are never sent. The demo never calls it. Details: HANDOFF.md §7 rule 5.

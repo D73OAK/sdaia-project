@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 // The sample data (web/src/data/mock.json).
 import mock from '../../data/mock.json';
-import { courseTotal, densityOf, estimateChapter, roundHalf, shiftRange } from './estimate.js';
+import { ESTIMATE_CONFIG, courseTotal, densityOf, estimateChapter, estimateWithDifficulty, roundHalf, shiftRange } from './estimate.js';
 
 describe('estimateChapter matches every chapter in mock.json', () => {
   for (const course of mock.courses) {
@@ -78,4 +78,31 @@ describe('shiftRange (− / + on a file)', () => {
     expect(shiftRange({ loHours: 0.5, hiHours: 1 }, -0.5)).toBeNull();
     expect(shiftRange({ loHours: 1, hiHours: 1.5 }, -0.5)).toEqual({ loHours: 0.5, hiHours: 1 });
   });
+});
+
+describe('estimateWithDifficulty (Version 4.6: the AI judges, the formula measures)', () => {
+  const m = { pages: 40, density: 'mid', equations: 10, exercises: 2 }; // formula (mid) 2.5–3.5
+
+  it('keeps the multipliers in ESTIMATE_CONFIG', () =>
+    expect(ESTIMATE_CONFIG.difficultyMultiplier).toEqual({ 1: 0.7, 2: 0.85, 3: 1, 4: 1.2, 5: 1.4 }));
+
+  it.each([
+    [1, 2, 3], // round½(2.5 × 0.7 = 1.75) = 2, hi round½(2.8) = 3
+    [2, 2, 3], // round½(2.125) = 2
+    [3, 2.5, 3.5], // difficulty 3 is the formula itself
+    [4, 3, 4], // round½(3) = 3, hi round½(4.2) = 4
+    [5, 3.5, 5], // round½(3.5) = 3.5, hi round½(4.9) = 5
+  ])('difficulty %i -> %s–%s h', (d, lo, hi) =>
+    expect(estimateWithDifficulty(m, 'mid', d)).toMatchObject({ loHours: lo, hiHours: hi }));
+
+  it('never goes under half an hour', () => {
+    const tiny = { pages: 10, density: 'low', equations: 0, exercises: 0 }; // formula 0.5–0.5
+    expect(estimateWithDifficulty(tiny, 'mid', 1)).toMatchObject({ loHours: 0.5, hiHours: 0.5 });
+  });
+
+  it('keeps the formula reason and applies the level through the formula', () => {
+    expect(estimateWithDifficulty(m, 'weak', 3)).toEqual(estimateChapter(m, 'weak'));
+  });
+
+  it('rejects an unknown difficulty', () => expect(() => estimateWithDifficulty(m, 'mid', 6)).toThrow());
 });

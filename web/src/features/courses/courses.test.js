@@ -10,11 +10,12 @@ import {
   draftProblems,
   freeColorIndex,
   hasProblems,
-  keptEstimate,
+  judgedContext,
   makeCourse,
   needsAI,
   newCourseId,
   nextOrder,
+  savedEstimate,
 } from './courses.js';
 
 const today = '2026-11-24';
@@ -111,21 +112,49 @@ describe('makeCourse', () => {
   });
 });
 
-describe('which files the AI estimates (§7 rule 5)', () => {
-  const saved = { id: 'c1-ch1', estimate: { loHours: 3, hiHours: 4, source: 'ai', aiReason: 'x' } };
-  it('asks about new files, and saved files only when the level changed', () => {
-    expect(needsAI({ read: {}, adjusted: null }, 'mid', undefined)).toBe(true);
-    expect(needsAI({ saved, adjusted: null }, 'mid', 'mid')).toBe(false);
-    expect(needsAI({ saved, adjusted: null }, 'weak', 'mid')).toBe(true);
+describe('which files the AI judges (§7 rule 5)', () => {
+  const metrics = { pages: 40, density: 'mid', equations: 10, exercises: 2 }; // formula (mid) 2.5–3.5
+  const judged = {
+    id: 'c1-ch1',
+    metrics,
+    estimate: { loHours: 3, hiHours: 4, reason: estimateChapter(metrics, 'mid').reason, source: 'ai', aiReason: 'فيه خوارزميات', difficulty: 4 },
+  };
+  const formulaOnly = { id: 'c1-ch2', metrics, estimate: { ...estimateChapter(metrics, 'mid'), source: 'formula' } };
+
+  it('asks only about new files that are not adjusted by hand', () => {
+    expect(needsAI({ read: {}, adjusted: null })).toBe(true);
+    expect(needsAI({ saved: judged, adjusted: null })).toBe(false); // even after a level change
+    expect(needsAI({ read: {}, adjusted: { loHours: 1, hiHours: 2 } })).toBe(false);
   });
-  it('never asks about a file adjusted by hand, so its hours stay', () => {
-    expect(needsAI({ read: {}, adjusted: { loHours: 1, hiHours: 2 } }, 'mid', undefined)).toBe(false);
-    expect(needsAI({ saved, adjusted: { loHours: 1, hiHours: 2 } }, 'weak', 'mid')).toBe(false);
+
+  it('a judged saved file keeps its difficulty; the level changes only the formula part', () => {
+    expect(savedEstimate({ saved: judged, adjusted: null }, 'mid', 'mid')).toEqual(judged.estimate);
+    // weak: formula lo 3.5 (2.5 × 1.4) × 1.2 = 4.2 -> 4, hi 5.6 -> 5.5
+    expect(savedEstimate({ saved: judged, adjusted: null }, 'weak', 'mid')).toEqual({
+      ...judged.estimate,
+      loHours: 4,
+      hiHours: 5.5,
+      reason: estimateChapter(metrics, 'weak').reason,
+    });
   });
-  it('a saved file keeps its estimate while the level stays the same', () => {
-    expect(keptEstimate({ saved, adjusted: null }, 'mid', 'mid')).toBe(saved.estimate);
-    expect(keptEstimate({ saved, adjusted: null }, 'weak', 'mid')).toBeUndefined();
-    expect(keptEstimate({ read: {}, adjusted: null }, 'mid', 'mid')).toBeUndefined();
+
+  it('a formula file keeps its estimate at the same level, and is estimated again after a level change', () => {
+    expect(savedEstimate({ saved: formulaOnly, adjusted: null }, 'mid', 'mid')).toBe(formulaOnly.estimate);
+    expect(savedEstimate({ saved: formulaOnly, adjusted: null }, 'weak', 'mid')).toBeUndefined();
+  });
+
+  it('an adjusted or new file has no saved estimate to keep', () => {
+    expect(savedEstimate({ saved: judged, adjusted: { loHours: 1, hiHours: 2 } }, 'mid', 'mid')).toBeUndefined();
+    expect(savedEstimate({ read: {}, adjusted: null }, 'mid', 'mid')).toBeUndefined();
+  });
+
+  it('sends the judged saved files as context, numbered as on screen', () => {
+    const items = [
+      { item: { saved: formulaOnly }, kind: 'lecture', index: 1 },
+      { item: { saved: judged }, kind: 'lecture', index: 2 },
+      { item: { read: {} }, kind: 'lecture', index: 3 },
+    ];
+    expect(judgedContext(items)).toEqual([{ kind: 'lecture', index: 2, difficulty: 4, reason: 'فيه خوارزميات' }]);
   });
 });
 

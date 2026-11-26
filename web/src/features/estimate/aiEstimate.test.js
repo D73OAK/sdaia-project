@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AI_BOUNDS, MAX_PROMPT_CHARS, buildPrompt, checkRange, estimateCourse, parseAnswer } from './aiEstimate.js';
+import { MAX_PROMPT_CHARS, buildPrompt, checkJudgment, estimateCourse, parseAnswer } from './aiEstimate.js';
 import { estimateChapter } from './estimate.js';
 
 // Two chapters and one exercise file, level mid. Formula: f1 2.5–3.5, f2 1–1.5, f3 1.5–2.
@@ -17,7 +17,7 @@ const course = {
     { key: 3, kind: 'exercises', index: 1, metrics: metrics.c, sample: 'Exercise 1: insert into a heap '.repeat(50) },
   ],
 };
-const formula = (m) => estimateChapter(m, 'mid');
+const formula = (m, level = 'mid') => estimateChapter(m, level);
 
 // A fake /api/ai: the route answers { text } with the model's reply.
 function mockFetch(reply, { status = 200 } = {}) {
@@ -31,19 +31,20 @@ const answer = (files) => JSON.stringify({ files });
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('estimateCourse: the AI decides, the formula is the failsafe', () => {
-  it('uses a valid answer for every file, rounded to half hours, in ONE call', async () => {
+describe('estimateCourse: the AI judges the difficulty, the formula measures the size', () => {
+  it('scales the formula range by the difficulty, in ONE call', async () => {
     const fetch = mockFetch(
       '```json\n' +
         answer([
-          { id: 'f1', difficulty: 4, loHours: 3, hiHours: 3.9, reason: 'فيه اجتياز الأشجار تحتاج تتبّع' },
-          { id: 'f2', difficulty: 2, loHours: 1, hiHours: 1.5, reason: 'فيه الـstack والـqueue' },
-          { id: 'f3', difficulty: 3, loHours: 2, hiHours: 2.5, reason: 'تمارين إدخال في الـheap' },
+          { id: 'f1', difficulty: 4, reason: 'فيه اجتياز الأشجار تحتاج تتبّع' },
+          { id: 'f2', difficulty: 2, reason: 'فيه الـstack والـqueue' },
+          { id: 'f3', difficulty: 5, reason: 'تمارين إدخال في الـheap' },
         ]) +
         '\n```',
     );
     const out = await estimateCourse(course);
     expect(fetch).toHaveBeenCalledTimes(1);
+    // f1: lo = round½(2.5 × 1.2) = 3, hi = round½(3 × 1.4) = 4
     expect(out.get(1)).toEqual({
       loHours: 3,
       hiHours: 4,
@@ -52,15 +53,30 @@ describe('estimateCourse: the AI decides, the formula is the failsafe', () => {
       aiReason: 'فيه اجتياز الأشجار تحتاج تتبّع',
       difficulty: 4,
     });
-    expect(out.get(2)).toMatchObject({ loHours: 1, hiHours: 1.5, source: 'ai', difficulty: 2 });
-    expect(out.get(3)).toMatchObject({ loHours: 2, hiHours: 2.5, source: 'ai', difficulty: 3 });
+    expect(out.get(2)).toMatchObject({ loHours: 1, hiHours: 1.5, source: 'ai', difficulty: 2 }); // 1 × 0.85
+    expect(out.get(3)).toMatchObject({ loHours: 2, hiHours: 3, source: 'ai', difficulty: 5 }); // 1.5 × 1.4
   });
 
-  it('falls back to the formula only for an out-of-bounds file', async () => {
+  it('gives the same hours for the same difficulty, every time', async () => {
+    const reply = answer([{ id: 'f1', difficulty: 3, reason: 'x' }]);
+    mockFetch(reply);
+    const one = await estimateCourse({ ...course, files: [course.files[0]] });
+    const two = await estimateCourse({ ...course, files: [course.files[0]] });
+    expect(one.get(1)).toEqual(two.get(1));
+    expect(one.get(1)).toMatchObject({ loHours: 2.5, hiHours: 3.5 }); // difficulty 3 = the formula
+  });
+
+  it('applies the level through the formula, not through the AI', async () => {
+    mockFetch(answer([{ id: 'f1', difficulty: 3, reason: 'x' }]));
+    const weak = await estimateCourse({ ...course, level: 'weak', files: [course.files[0]] });
+    expect(weak.get(1)).toMatchObject({ loHours: formula(metrics.a, 'weak').loHours });
+  });
+
+  it('falls back to the plain formula (not difficulty 3) for a file with a broken or missing answer', async () => {
     mockFetch(
       answer([
-        { id: 'f1', difficulty: 3, loHours: 2.5, hiHours: 5, reason: 'واسع' }, // hi > round½(2.5 × 1.4) = 3.5
-        { id: 'f2', difficulty: 2, loHours: 1, hiHours: 1.5, reason: 'فيه الـstack والـqueue' },
+        { id: 'f1', difficulty: 7, reason: 'خارج المقياس' },
+        { id: 'f2', difficulty: 2, reason: 'فيه الـstack والـqueue' },
         // f3 missing from the answer
       ]),
     );
@@ -94,89 +110,56 @@ describe('estimateCourse: the AI decides, the formula is the failsafe', () => {
   });
 });
 
-describe('checkRange: the rules for one file', () => {
-  const f = { loHours: 2, hiHours: 3 }; // formula hi 3: the AI hi must be between 1 and 9
-  const ok = (lo, hi, difficulty = 3) => checkRange({ loHours: lo, hiHours: hi, reason: 'سبب', difficulty }, f);
-
-  it('accepts a range inside the rules and keeps the difficulty', () =>
-    expect(ok(4, 5.5, 4)).toEqual({ loHours: 4, hiHours: 5.5, reason: 'سبب', difficulty: 4 }));
-
-  it('needs numbers, a reason and a difficulty', () => {
-    expect(checkRange({ loHours: '2', hiHours: 3, reason: 'x', difficulty: 3 }, f)).toBeNull();
-    expect(checkRange({ loHours: 2, hiHours: 3, difficulty: 3 }, f)).toBeNull();
-    expect(checkRange({ loHours: 2, hiHours: 3, reason: '  ', difficulty: 3 }, f)).toBeNull();
-    expect(checkRange({ loHours: 2, hiHours: 3, reason: 'x' }, f)).toBeNull();
+describe('checkJudgment', () => {
+  it('accepts a whole difficulty from 1 to 5 and a reason', () => {
+    expect(checkJudgment({ difficulty: 1, reason: 'سبب' })).toEqual({ difficulty: 1, reason: 'سبب' });
+    expect(checkJudgment({ difficulty: 5, reason: 'سبب' })).toEqual({ difficulty: 5, reason: 'سبب' });
   });
-
-  it('needs a whole difficulty from 1 to 5', () => {
-    expect(ok(2, 2.5, 0)).toBeNull();
-    expect(ok(2, 2.5, 6)).toBeNull();
-    expect(ok(2, 2.5, 2.5)).toBeNull();
-    expect(ok(2, 2.5, 1)).not.toBeNull();
-    expect(ok(2, 2.5, 5)).not.toBeNull();
-  });
-
-  it('needs lo ≥ 0.5 and hi ≥ lo', () => {
-    expect(ok(0.4, 0.5)).toBeNull();
-    expect(ok(3, 2.5)).toBeNull();
-  });
-
-  it('keeps the range as narrow as the formula: hi ≤ round½(lo × 1.4)', () => {
-    expect(AI_BOUNDS.maxSpread).toBe(1.4);
-    expect(ok(1, 1.5)).not.toBeNull(); // 1.4 rounds to 1.5
-    expect(ok(1, 2)).toBeNull();
-    expect(ok(2, 3)).not.toBeNull(); // 2.8 rounds to 3
-    expect(ok(2, 3.5)).toBeNull();
-    expect(ok(2.5, 3.5)).not.toBeNull();
-    expect(ok(2.5, 4)).toBeNull();
-  });
-
-  it('needs hi between a third and three times the formula hi', () => {
-    expect(ok(0.5, 0.5)).toBeNull(); // under 3 ÷ 3 = 1
-    expect(ok(7, 9.5)).toBeNull(); // over 3 × 3 = 9
-    expect(ok(1, 1)).not.toBeNull();
-    expect(ok(7, 9)).not.toBeNull();
-  });
-
-  it('lets a half-hour formula file go up to 2 hours: hi ≤ max(3 × formula hi, 2)', () => {
-    const tiny = { loHours: 0.5, hiHours: 0.5 }; // 3 × 0.5 = 1.5, so the 2-hour floor wins
-    const check = (lo, hi) => checkRange({ loHours: lo, hiHours: hi, reason: 'x', difficulty: 2 }, tiny);
-    expect(check(1.5, 2)).not.toBeNull();
-    expect(check(2, 2.5)).toBeNull();
-  });
-
+  it.each([
+    [{ difficulty: 0, reason: 'x' }],
+    [{ difficulty: 6, reason: 'x' }],
+    [{ difficulty: 2.5, reason: 'x' }],
+    [{ difficulty: '3', reason: 'x' }],
+    [{ reason: 'x' }],
+    [{ difficulty: 3 }],
+    [{ difficulty: 3, reason: '   ' }],
+    [null],
+  ])('rejects %j', (a) => expect(checkJudgment(a)).toBeNull());
   it('keeps the reason on one line', () =>
-    expect(checkRange({ loHours: 2, hiHours: 2.5, reason: 'سطر\nثاني', difficulty: 3 }, f).reason).toBe('سطر ثاني'));
+    expect(checkJudgment({ difficulty: 3, reason: 'سطر\nثاني' }).reason).toBe('سطر ثاني'));
 });
 
 describe('parseAnswer', () => {
   it('ignores unknown ids and repeats', () => {
-    const formulas = new Map([['f1', { loHours: 2, hiHours: 3 }]]);
     const text = answer([
-      { id: 'f9', difficulty: 3, loHours: 2, hiHours: 2.5, reason: 'x' },
-      { id: 'f1', difficulty: 3, loHours: 2, hiHours: 2.5, reason: 'first' },
-      { id: 'f1', difficulty: 3, loHours: 3, hiHours: 4, reason: 'second' },
+      { id: 'f9', difficulty: 3, reason: 'x' },
+      { id: 'f1', difficulty: 3, reason: 'first' },
+      { id: 'f1', difficulty: 4, reason: 'second' },
     ]);
-    const out = parseAnswer(text, formulas);
+    const out = parseAnswer(text, new Set(['f1']));
     expect([...out.keys()]).toEqual(['f1']);
     expect(out.get('f1').reason).toBe('first');
   });
 });
 
 describe('buildPrompt', () => {
-  it('sends the label, the numbers, the formula range and a sample of up to 1500 characters', () => {
+  it('sends the label, the kind, the content counts and a sample, but no level, pages or hours', () => {
     const data = JSON.parse(buildPrompt(course));
-    expect(data).toMatchObject({ course: 'هياكل البيانات', level: 'mid' });
-    expect(data.files[0]).toMatchObject({ id: 'f1', label: 'شابتر ١', pages: 40, formulaRange: [2.5, 3.5] });
-    expect(data.files[2].label).toBe('تمارين ١');
+    expect(data.course).toBe('هياكل البيانات');
+    expect(data.files[0]).toMatchObject({ id: 'f1', label: 'شابتر ١', kind: 'chapter', density: 'mid', equations: 10 });
+    expect(data.files[2]).toMatchObject({ label: 'تمارين ١', kind: 'exercises' });
     expect(data.files[0].sample.length).toBeLessThanOrEqual(1500);
+    expect(data.level).toBeUndefined();
+    expect(data.files[0].pages).toBeUndefined();
+    expect(data.files[0].formulaRange).toBeUndefined();
+    expect(data.alreadyJudged).toBeUndefined();
   });
 
-  it('sends a saved file its earlier AI reason instead of a sample', () => {
-    const saved = { key: 9, kind: 'lecture', index: 1, metrics: metrics.a, previousReason: 'فيه خوارزميات' };
-    const data = JSON.parse(buildPrompt({ ...course, files: [saved] }));
-    expect(data.files[0].previousReason).toBe('فيه خوارزميات');
-    expect(data.files[0].sample).toBeUndefined();
+  it('sends the saved files already judged as context', () => {
+    const context = [{ kind: 'lecture', index: 1, difficulty: 4, reason: 'فيه خوارزميات' }];
+    const data = JSON.parse(buildPrompt({ ...course, files: [{ ...course.files[1], index: 2 }], context }));
+    expect(data.alreadyJudged).toEqual([{ label: 'شابتر ١', difficulty: 4, reason: 'فيه خوارزميات' }]);
+    expect(data.files.map((f) => f.label)).toEqual(['شابتر ٢']);
   });
 
   it('shrinks the samples so a course with many files fits one call', () => {

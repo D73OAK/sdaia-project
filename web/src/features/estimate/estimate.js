@@ -19,6 +19,9 @@ export const ESTIMATE_CONFIG = {
   rangeFactor: 1.4, // hi = lo × 1.4
   // Words per page: below `lowBelow` is low, above `highAbove` is high, anything between is mid.
   density: { lowBelow: 120, highAbove: 300 },
+  // Version 4.6: the AI judges how hard the content is (1–5); the formula's range is scaled by this.
+  // 3 is the formula itself. Placeholders, to calibrate against real study times like the weights above.
+  difficultyMultiplier: { 1: 0.7, 2: 0.85, 3: 1, 4: 1.2, 5: 1.4 },
 };
 
 const C = ESTIMATE_CONFIG;
@@ -56,6 +59,18 @@ export function estimateChapter(metrics, level) {
   });
 
   return { loHours, hiHours, reason };
+}
+
+// The AI's judgment applied to the formula (HANDOFF.md §7 rule 5, Version 4.6): the AI says how hard the
+// content is, the formula measures its size and applies the level.
+//   lo = max(0.5, round½(formula lo × difficulty multiplier)),  hi = round½(lo × 1.4)
+// returns { loHours, hiHours, reason } (the formula's counted reason), like estimateChapter.
+export function estimateWithDifficulty(metrics, level, difficulty) {
+  const multiplier = C.difficultyMultiplier[difficulty];
+  if (multiplier === undefined) throw new Error(`Unknown difficulty: ${difficulty}`);
+  const formula = estimateChapter(metrics, level);
+  const loHours = Math.max(C.minHours, roundHalf(formula.loHours * multiplier));
+  return { loHours, hiHours: roundHalf(loHours * C.rangeFactor), reason: formula.reason };
 }
 
 // The course total is the sum of its readable chapters (chapters with an error are skipped).

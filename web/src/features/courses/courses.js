@@ -1,4 +1,5 @@
 // courses.js: the rules for adding a course (HANDOFF.md §7 rules 1–4). Pure functions, no UI.
+import { aiEstimate } from '../estimate/aiEstimate.js';
 import { estimateChapter } from '../estimate/estimate.js';
 
 export const MAX_COURSES = 6; // HANDOFF.md §7 rule 4: a design limit AND a code limit
@@ -43,16 +44,35 @@ export function freeColorIndex(courses) {
 // Courses stay in the order they were added: a new one goes after the last.
 export const nextOrder = (courses) => courses.reduce((max, c) => Math.max(max, c.order), 0) + 1;
 
-// ---------- building the course to save ----------
-// ---------- which files the AI estimates (HANDOFF.md §7 rule 5) ----------
-// On save, the AI is asked about every file that is not adjusted by hand and is either new, or saved
-// before with another level. A saved file keeps its estimate while the level stays the same, so saving
-// a course with no new file and the same level makes no AI call at all.
-export const needsAI = (item, level, savedLevel) => !item.adjusted && (!item.saved || level !== savedLevel);
+// ---------- which files the AI judges (HANDOFF.md §7 rule 5) ----------
+// On save, the AI judges every NEW file that is not adjusted by hand. A saved file keeps its difficulty
+// (its text is not kept, so it cannot be judged again), and the level does not change a difficulty, so
+// saving a course with no new file makes no AI call at all.
+export const needsAI = (item) => !item.adjusted && !item.saved;
 
-// The estimate a file keeps without asking: a saved, unadjusted file with the same level keeps its own.
-export const keptEstimate = (item, level, savedLevel) =>
-  item.saved && !item.adjusted && level === savedLevel ? item.saved.estimate : undefined;
+// The estimate of a saved, unadjusted file, without asking the AI:
+//   judged by the AI (has a difficulty): its hours again from the formula × difficulty, at the chosen level
+//   anything else: its saved estimate while the level stays the same; after a level change undefined,
+//   so the formula estimates it again
+export function savedEstimate(item, level, savedLevel) {
+  if (!item.saved || item.adjusted) return undefined;
+  const est = item.saved.estimate;
+  if (est?.source === 'ai' && est.difficulty !== undefined && est.aiReason)
+    return aiEstimate(item.saved.metrics, level, { difficulty: est.difficulty, reason: est.aiReason });
+  return level === savedLevel ? est : undefined;
+}
+
+// The saved files the AI already judged, sent with new files as context so it can compare them.
+// items: [{ item, kind, index }] in screen order.
+export const judgedContext = (items) =>
+  items
+    .filter(({ item }) => item.saved?.estimate?.source === 'ai' && item.saved.estimate.difficulty !== undefined)
+    .map(({ item, kind, index }) => ({
+      kind,
+      index,
+      difficulty: item.saved.estimate.difficulty,
+      reason: item.saved.estimate.aiReason,
+    }));
 
 // ---------- building the course to save ----------
 // files = { lecture: [item], exercises: [item] } in screen order, all without errors. An item is a file

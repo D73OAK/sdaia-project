@@ -19,13 +19,16 @@ v1 decisions (approved 2026-11-24):
 - Estimate: 5 factors only (pages, words-per-page density, equations, exercises, level). Formula and weights
   are in HANDOFF.md §7 rule 5, all in ONE config object (`ESTIMATE_CONFIG` in `estimate.js`).
   Levels: weak ×1.4, mid ×1, strong ×0.75. The weights are placeholders, to calibrate later.
-- AI estimate (Version 4.4, approved 2026-11-26): the AI decides the study time, the formula is the failsafe.
-  On save (screen 2, new or edit): ONE call per course through `web/api/ai.js`, with each file's numbers,
-  the formula range as one signal (not the base), and a text sample (~1500 chars, never stored). Version 4.5:
-  a step-by-step method in the system message, a difficulty 1–5 per file, ranges as narrow as the formula
-  (hi ≤ round½(lo × 1.4)), reasoning_effort medium, max_tokens 4000. Each file's answer is checked
-  (`aiEstimate.js`, HANDOFF.md §7 rule 5); a bad range, a failed call, a 30 s timeout or a missing
-  key means the formula, with no error shown. Hand-adjusted files are never sent. The demo never calls it.
+- AI estimate (Version 4.6, approved 2026-11-26): the AI judges the difficulty, the formula measures the size.
+  On save (screen 2, new or edit): ONE call per course through `web/api/ai.js` for its NEW files, with each
+  file's label, kind, density, equation and exercise counts and a text sample (~1500 chars, never stored);
+  no level, pages or formula range. Saved files already judged go along as context only. The AI returns
+  only a difficulty 1–5 (about the content, not the student) and a reason. Hours = the formula range scaled
+  by `ESTIMATE_CONFIG.difficultyMultiplier` (1 ×0.7 … 5 ×1.4), lo = max(0.5, round½(formula lo × m)),
+  hi = round½(lo × 1.4). reasoning_effort medium, max_tokens 4000. A missing or broken answer, a failed
+  call, a 30 s timeout or a missing key means the plain formula (never an assumed 3), with no error shown.
+  A saved file keeps its difficulty; a level change recomputes its hours without a call. Hand-adjusted
+  files are never sent. The demo never calls it. Details: HANDOFF.md §7 rule 5.
 - Course entry has two upload zones: «ملفات الشابترات» (required) and «ملفات التمارين» (optional).
   A file's kind comes ONLY from its zone, never from its name (HANDOFF.md §7 rule 6). Exercise files get the
   same checks, messages and formula, are numbered separately («تمارين ١»), and count in the course range.
@@ -111,7 +114,7 @@ sdaia-project/
         ├── components/  # Button, Field (Input, Select), Pills, Upload, Cards, Modal, Session, Icon, Doodles
         ├── features/
         │   ├── courses/   # screens 1–3: home, course entry, course list + preferences popup
-        │   ├── estimate/  # estimate.js (5 factors → range + reason), aiEstimate.js (AI + checks) + tests
+        │   ├── estimate/  # estimate.js (5 factors → range + reason), aiEstimate.js (AI difficulty × formula) + tests
         │   └── schedule/  # screen 4 + schedule.js (week calendar) + tests
         ├── lib/         # pdf.js, storage.js, format.js, strings.js, options.js, ai.js (askAI) (shared code)
         └── data/        # mock.json: sample data for tests and the demo

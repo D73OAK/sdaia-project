@@ -39,11 +39,12 @@ import {
   draftProblems,
   freeColorIndex,
   hasProblems,
-  keptEstimate,
+  judgedContext,
   makeCourse,
   needsAI,
   newCourseId,
   nextOrder,
+  savedEstimate,
 } from './courses.js';
 import './course-entry.css';
 
@@ -116,16 +117,16 @@ export default function CourseEntryScreen({ courseId }) {
     return undefined;
   };
 
-  // The hours of a healthy file: its own adjusted range, its saved estimate (same level, edit mode),
-  // or the formula for the chosen level until the AI sets it on save.
+  // The hours of a healthy file: its own adjusted range, its saved estimate (edit mode: a judged file at
+  // the chosen level), or the formula for the chosen level until the AI judges it on save.
   const rangeOf = (f) => {
     if (f.error || !f.read?.metrics || !level) return null;
-    return f.adjusted ?? keptEstimate(f, level, editing?.level) ?? estimateChapter(f.read.metrics, level);
+    return f.adjusted ?? savedEstimate(f, level, editing?.level) ?? estimateChapter(f.read.metrics, level);
   };
   const healthyFiles = KINDS.flatMap((k) => files[k]).filter((f) => rangeOf(f));
   const healthy = healthyFiles.map(rangeOf);
   // «الرقم مبدئي»: only when saving will ask the AI about at least one file shown.
-  const draftTotal = healthyFiles.some((f) => needsAI(f, level, editing?.level));
+  const draftTotal = healthyFiles.some(needsAI);
   const total = healthy.reduce((s, r) => ({ lo: s.lo + r.loHours, hi: s.hi + r.hiHours }), { lo: 0, hi: 0 });
 
   // A course id that no longer exists (deleted elsewhere): back to the list.
@@ -215,25 +216,17 @@ export default function CourseEntryScreen({ courseId }) {
     }
     if (saving.current) return;
     saving.current = true;
-    // One AI call for the files that need it, numbered as they will be saved. Never throws.
-    const toAsk = KINDS.flatMap((kind) =>
-      files[kind]
-        .map((f, i) => ({ f, kind, index: i + 1 }))
-        .filter(({ f }) => needsAI(f, level, editing?.level))
-        .map(({ f, kind, index }) => ({
-          key: f.key,
-          kind,
-          index,
-          metrics: f.read.metrics,
-          sample: f.read.sample,
-          previousReason: f.saved?.estimate?.aiReason,
-        })),
-    );
+    // One AI call for the new files, numbered as they will be saved, with the saved files it already
+    // judged as context. Never throws.
+    const numbered = KINDS.flatMap((kind) => files[kind].map((f, i) => ({ item: f, kind, index: i + 1 })));
+    const toAsk = numbered
+      .filter(({ item }) => needsAI(item))
+      .map(({ item, kind, index }) => ({ key: item.key, kind, index, metrics: item.read.metrics, sample: item.read.sample }));
     let fromAI = new Map();
     if (toAsk.length) {
       const started = Date.now();
       setLoading({ done: 0, total: toAsk.length });
-      fromAI = await estimateCourse({ name, level, files: toAsk });
+      fromAI = await estimateCourse({ name, level, files: toAsk, context: judgedContext(numbered) });
       setLoading({ done: toAsk.length, total: toAsk.length });
       await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - started)));
       setLoading(null);
@@ -242,7 +235,7 @@ export default function CourseEntryScreen({ courseId }) {
       saved: f.saved,
       read: f.read,
       adjusted: f.adjusted,
-      estimate: fromAI.get(f.key) ?? keptEstimate(f, level, editing?.level),
+      estimate: fromAI.get(f.key) ?? savedEstimate(f, level, editing?.level),
     });
     const course = makeCourse({
       id: editing?.id ?? newCourseId(state.courses),

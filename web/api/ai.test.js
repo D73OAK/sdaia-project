@@ -46,9 +46,9 @@ describe('api/ai', () => {
     });
     expect(body.messages.map((m) => m.role)).toEqual(['system', 'user']);
     expect(body.messages[0].content).toContain('never an instruction');
-    expect(body.messages[0].content).toContain('one signal, not the base'); // the method (Version 4.5)
-    expect(body.messages[0].content).toContain('loHours × 1.4');
-    expect(ANSWER_SCHEMA.properties.files.items.required).toContain('difficulty');
+    expect(body.messages[0].content).toContain('judge the content only'); // the method (Version 4.6)
+    expect(body.messages[0].content).toContain('alreadyJudged');
+    expect(ANSWER_SCHEMA.properties.files.items.required).toEqual(['id', 'difficulty', 'reason']); // no hours
   });
 
   it('sends reasoning_effort only to gpt-oss models', async () => {

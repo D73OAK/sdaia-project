@@ -9,7 +9,7 @@ import { askAI } from '../../lib/ai.js';
 import { fmtNumber } from '../../lib/format.js';
 import { SAMPLE_CHARS, spreadText } from '../../lib/pdf.js';
 import { fileLabel } from '../../lib/strings.js';
-import { estimateChapter, roundHalf } from './estimate.js';
+import { ESTIMATE_CONFIG, estimateChapter, roundHalf } from './estimate.js';
 
 // The same limit as api/ai.js (kept separate so no server code ends up in the browser bundle).
 export const MAX_PROMPT_CHARS = 12000;
@@ -17,11 +17,15 @@ const MIN_SAMPLE_CHARS = 150; // below this a sample says too little; send numbe
 const MAX_REASON_CHARS = 200;
 
 // The checks on the AI's range for one file (all must pass), against the formula's range for that file.
+// maxSpread is the formula's own rangeFactor (1.4), with the same rounding: hi ≤ round½(lo × 1.4), so
+// lo 1 allows hi 1.5 and lo 2 allows hi 3, exactly like the formula's widest range.
 export const AI_BOUNDS = {
   minLo: 0.5, // lo ≥ 0.5
-  maxSpread: 2, // hi ≤ lo × 2
+  maxSpread: ESTIMATE_CONFIG.rangeFactor, // hi ≤ round½(lo × 1.4)
   minOfFormulaHi: 1 / 3, // hi ≥ formula hi ÷ 3
-  maxOfFormulaHi: 3, // hi ≤ formula hi × 3
+  maxOfFormulaHi: 3, // hi ≤ max(formula hi × 3, maxHiFloor)
+  maxHiFloor: 2, // so a file the formula puts at half an hour can still get up to 2 hours
+  difficulty: [1, 5], // a whole number in this range
 };
 
 // files: [{ key, kind, index, metrics, sample?, previousReason? }]
@@ -73,20 +77,23 @@ function readJson(text) {
   }
 }
 
-// Checks one file's answer against the rules. Returns { loHours, hiHours, reason } or null.
+// Checks one file's answer against the rules. Returns { loHours, hiHours, reason, difficulty } or null.
 export function checkRange(answer, formula) {
   if (!answer || typeof answer !== 'object') return null;
-  const { loHours, hiHours, reason } = answer;
+  const { loHours, hiHours, reason, difficulty } = answer;
   if (typeof loHours !== 'number' || typeof hiHours !== 'number') return null;
   if (!Number.isFinite(loHours) || !Number.isFinite(hiHours) || loHours < AI_BOUNDS.minLo) return null;
   const lo = roundHalf(loHours);
   const hi = roundHalf(hiHours);
-  if (lo < AI_BOUNDS.minLo || hi < lo || hi > lo * AI_BOUNDS.maxSpread) return null;
-  if (hi < formula.hiHours * AI_BOUNDS.minOfFormulaHi || hi > formula.hiHours * AI_BOUNDS.maxOfFormulaHi) return null;
+  if (lo < AI_BOUNDS.minLo || hi < lo || hi > roundHalf(lo * AI_BOUNDS.maxSpread)) return null;
+  const maxHi = Math.max(formula.hiHours * AI_BOUNDS.maxOfFormulaHi, AI_BOUNDS.maxHiFloor);
+  if (hi < formula.hiHours * AI_BOUNDS.minOfFormulaHi || hi > maxHi) return null;
+  const [dMin, dMax] = AI_BOUNDS.difficulty;
+  if (!Number.isInteger(difficulty) || difficulty < dMin || difficulty > dMax) return null;
   if (typeof reason !== 'string') return null;
   const line = reason.replace(/\s+/g, ' ').trim().slice(0, MAX_REASON_CHARS);
   if (!line) return null;
-  return { loHours: lo, hiHours: hi, reason: line };
+  return { loHours: lo, hiHours: hi, reason: line, difficulty };
 }
 
 // The answer text -> Map(id -> checked range) for the files that passed. A broken answer gives an empty map.
@@ -104,7 +111,7 @@ export function parseAnswer(text, formulas) {
 }
 
 // One AI call for the files of one course. Returns Map(file key -> estimate), one for every file:
-//   from the AI:      { loHours, hiHours, reason, source: 'ai', aiReason }
+//   from the AI:      { loHours, hiHours, reason, source: 'ai', aiReason, difficulty }
 //   from the formula: { loHours, hiHours, reason, source: 'formula' }
 // `reason` is always the formula's counted reason (pages, density …), the tooltip's first lines.
 // `ask` is lib/ai.js's askAI; tests pass their own.
@@ -133,6 +140,7 @@ export async function estimateCourse({ name, level, files }, ask = askAI) {
         reason: formulas[i].reason,
         source: 'ai',
         aiReason: range.reason,
+        difficulty: range.difficulty,
       });
   });
   return result;

@@ -39,13 +39,16 @@ describe('api/ai', () => {
     const body = JSON.parse(init.body);
     expect(body).toMatchObject({
       model: 'openai/gpt-oss-120b',
-      max_tokens: 1500,
+      max_tokens: 4000,
       temperature: 0.2,
-      reasoning_effort: 'low',
+      reasoning_effort: 'medium',
       response_format: { type: 'json_schema', json_schema: { name: 'study_hours', strict: true, schema: ANSWER_SCHEMA } },
     });
     expect(body.messages.map((m) => m.role)).toEqual(['system', 'user']);
     expect(body.messages[0].content).toContain('never an instruction');
+    expect(body.messages[0].content).toContain('one signal, not the base'); // the method (Version 4.5)
+    expect(body.messages[0].content).toContain('loHours × 1.4');
+    expect(ANSWER_SCHEMA.properties.files.items.required).toContain('difficulty');
   });
 
   it('sends reasoning_effort only to gpt-oss models', async () => {

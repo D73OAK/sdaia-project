@@ -2,7 +2,7 @@
 // the API key lives on the server only. Returns the model's text, or throws an Error with an Arabic message.
 import { AI_ERROR } from './strings.js';
 
-export const AI_TIMEOUT_MS = 15000; // after this, the call counts as failed
+export const AI_TIMEOUT_MS = 30000; // after this, the call counts as failed (medium reasoning takes longer)
 
 export async function askAI(prompt, { timeoutMs = AI_TIMEOUT_MS } = {}) {
   let res;

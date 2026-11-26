@@ -37,8 +37,8 @@ const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 function cleanChapter(ch) {
   const out = pick(ch, ['id', 'fileName', 'fileSizeBytes', 'kind', 'index', 'error', 'adjusted']);
   if (isObject(ch.metrics)) out.metrics = pick(ch.metrics, ['pages', 'density', 'wordsPerPage', 'equations', 'exercises']);
-  // source: 'ai' | 'formula' (older data has none: formula). aiReason: the AI's one-line reason.
-  if (isObject(ch.estimate)) out.estimate = pick(ch.estimate, ['loHours', 'hiHours', 'reason', 'source', 'aiReason']);
+  // source: 'ai' | 'formula' (older data has none: formula). aiReason: the AI's one-line reason, difficulty 1–5.
+  if (isObject(ch.estimate)) out.estimate = pick(ch.estimate, ['loHours', 'hiHours', 'reason', 'source', 'aiReason', 'difficulty']);
   return out;
 }
 

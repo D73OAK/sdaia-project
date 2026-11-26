@@ -225,7 +225,10 @@ export function loadingText(count, countText) {
 export const AI_TEXT = {
   privacy: 'نرسل جزء من نص ملفاتك للـAI عشان يقدّر صعوبتها، وما نحفظه.', // under the upload zones
   draft: 'الرقم مبدئي، والـAI يضبطه لما تحفظ.', // under the course total
-  tooltipLine: (reason) => `تقدير الـAI: ${reason}`, // last tooltip line of an AI estimate
+  // The last tooltip line of an AI estimate. `difficultyText` is formatted («٤»); estimates saved before
+  // Version 4.5 have no difficulty and keep the short line.
+  tooltipLine: (reason, difficultyText, maxText) =>
+    difficultyText ? `تقدير الـAI (صعوبة ${difficultyText} من ${maxText}): ${reason}` : `تقدير الـAI: ${reason}`,
 };
 // Thrown by lib/ai.js. Never shown: a failed AI call falls back to the formula without a message.
 export const AI_ERROR = 'ما قدرنا نوصل للـAI، جرّب بعدين.';

@@ -294,7 +294,13 @@ export default function ScheduleScreen() {
               <p>{TOOLTIP.level(p.course.level)}</p>
               {p.chapter.adjusted && <p>{ADJUST.tooltipLine}</p>}
               {!p.chapter.adjusted && p.chapter.estimate.source === 'ai' && p.chapter.estimate.aiReason && (
-                <p>{AI_TEXT.tooltipLine(p.chapter.estimate.aiReason)}</p>
+                <p>
+                  {AI_TEXT.tooltipLine(
+                    p.chapter.estimate.aiReason,
+                    p.chapter.estimate.difficulty && fmtNumber(p.chapter.estimate.difficulty),
+                    fmtNumber(5),
+                  )}
+                </p>
               )}
             </div>
           ))}

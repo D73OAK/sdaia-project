@@ -21,8 +21,10 @@ v1 decisions (approved 2026-11-24):
   Levels: weak ×1.4, mid ×1, strong ×0.75. The weights are placeholders, to calibrate later.
 - AI estimate (Version 4.4, approved 2026-11-26): the AI decides the study time, the formula is the failsafe.
   On save (screen 2, new or edit): ONE call per course through `web/api/ai.js`, with each file's numbers,
-  the formula range as a reference, and a text sample (~1500 chars, never stored). Each file's answer is
-  checked (`aiEstimate.js`, HANDOFF.md §7 rule 5); a bad range, a failed call, a 15 s timeout or a missing
+  the formula range as one signal (not the base), and a text sample (~1500 chars, never stored). Version 4.5:
+  a step-by-step method in the system message, a difficulty 1–5 per file, ranges as narrow as the formula
+  (hi ≤ round½(lo × 1.4)), reasoning_effort medium, max_tokens 4000. Each file's answer is checked
+  (`aiEstimate.js`, HANDOFF.md §7 rule 5); a bad range, a failed call, a 30 s timeout or a missing
   key means the formula, with no error shown. Hand-adjusted files are never sent. The demo never calls it.
 - Course entry has two upload zones: «ملفات الشابترات» (required) and «ملفات التمارين» (optional).
   A file's kind comes ONLY from its zone, never from its name (HANDOFF.md §7 rule 6). Exercise files get the
@@ -98,6 +100,7 @@ sdaia-project/
     ├── index.html       # <html lang="ar" dir="rtl">
     ├── .env.example     # the 3 AI variable names; the values go in .env.local (never committed)
     ├── api/             # ai.js: the only server code (the AI route) + its tests
+    ├── vercel.json      # the AI route may run up to 30 s
     └── src/
         ├── main.jsx     # entry point
         ├── App.jsx      # background + app state provider + screen switch

@@ -37,8 +37,6 @@ export const DURATION_UNIT = { minutes: 'د', hours: 'س' };
 // Badges (DESIGN.md §6 Badge).
 export const BADGE = {
   hours: (rangeText, hi) => `${rangeText} ${HOURS_UNIT(hi)}`,
-  exam: 'اختبار',
-  added: 'انضافت',
   missing: (hoursText) => `${hoursText} س ناقصة`,
 };
 

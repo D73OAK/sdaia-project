@@ -34,7 +34,7 @@ export function CourseCard({ name, colorIndex, hoursText, isNew = false, onClick
   );
 }
 
-// tone: 'hours' | 'exam' | 'success' | 'missing'. icon: an Icon name, at the start.
+// tone: 'hours' | 'missing'. icon: an Icon name, at the start.
 export function Badge({ tone, icon, children }) {
   return (
     <span className={`badge badge--${tone}`}>

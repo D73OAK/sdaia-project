@@ -1,66 +1,90 @@
 # Brief for the AI coding agent
 
-You are building **ميزان المذاكرة** (Study Scale), an Arabic RTL web app. A student uploads one PDF per chapter for each course (plus optional exercise files in a separate upload zone) and gets an estimated study-hours range per chapter with the reasons, then a weekly study schedule up to the last exam. Build it in **4 days**, for a beginner who works alone.
+**ميزان المذاكرة** (Study Scale) is an Arabic RTL web app, live at https://m1zan.vercel.app. A university student
+adds each course (chapter PDFs, optional exercise PDFs, their level, the exam date), sees a study-hours range
+per file with the reason, and gets a weekly study schedule from tomorrow to the last exam. This brief
+describes the **final app (Version 4.8)**. Change it only together with the code.
 
 ## Read first, in this order
-1. `PRD.md`: the problem, the user, the scope, and what is out of scope.
-2. `HANDOFF.md`: the screens, the happy and unhappy paths, data, actions, rules, and the **exact Arabic state texts**. Items marked [?] are assumptions: ask before you decide them.
-3. `DESIGN.md`: tokens, type, components, motion, and the Arabic/RTL rules. **Follow it exactly. It wins over the prototype.**
-4. `web/src/data/mock.json`: realistic sample data. Use it for fixtures, tests and the demo.
-5. `prototype.html`: the working reference for the look, the flow, and the scheduling logic. Open it in a browser and click «جرّب ببيانات تجريبية». The estimate in it is **fake**: it is based on a hash of the file. You replace that with real PDF analysis.
+1. `PRD.md`: the problem, the user, what was built and what stayed out of scope.
+2. `HANDOFF.md`: screens, happy and unhappy paths, data, actions, rules, and the **exact Arabic texts (§8)**.
+3. `DESIGN.md`: tokens, type, components and their states, motion, Arabic/RTL rules.
+4. `design/shots/`: screenshots of the built app (index in its README.md).
+5. `web/src/data/mock.json`: the sample data behind the tests and «جرّب ببيانات تجريبية».
+
+`prototype.html` and `design/mockups/` show the **first design** (before Version 2). They are kept for history
+only. DESIGN.md, HANDOFF.md and `design/shots/` describe the final app and win over them.
 
 ## Hard rules
-- Arabic, `dir="rtl"`. Laptop and tablet first. Every hover interaction needs a tap equivalent.
-- No accounts, no login, no backend in v1. "Backend" here means the app's logic and data layer, all in the browser: courses, preferences and the plan are saved in `localStorage`. The student moves the schedule to other devices by downloading it as a PDF (HANDOFF.md §7 rule 15).
-- Only PDF. Each file in «ملفات الشابترات» = exactly one chapter; each file in the optional «ملفات التمارين» zone = one exercise file. Estimate only the files the student uploaded.
-- From opening the app to seeing the schedule must take under **10 minutes** for 4 courses.
-- Do not add features that are not in PRD.md. Out of scope: drag-and-drop, notifications, sharing, sync, non-PDF files.
+- Arabic only, `dir="rtl"`, every UI string in `web/src/lib/strings.js`, §8 texts word for word.
+- Laptop and tablet first; phones work too. Touch targets 44px or more; every hover has a tap equivalent.
+- No accounts and no database. Courses, preferences, the plan and progress live in `localStorage`
+  (`web/src/lib/storage.js`, versioned key, defensive reads). The student moves the schedule to other devices
+  by downloading it as a PDF.
+- The only server code is one Vercel function, `web/api/ai.js`, which holds the AI key. It stores nothing.
+- PDF only, 40 MB per file, max 6 courses. A file's kind (`lecture` / `exercises`) comes only from its upload
+  zone, never from its name. PDFs are never stored: only their counted numbers.
+- Never insert PDF text or user text as HTML.
 
-## Estimation (the core; build it first)
-For each chapter PDF, extract:
-1. `pages`: the page count
-2. `density`: average words per page, bucketed into low (<120), mid (120–300), and high (>300)
-3. `equations`: the count of math symbols and equation-like lines (`= ∑ √ ∫ ≤ ≥ ^ π`, fractions)
-4. `exercises`: the count of "Exercise / Example / Problem / تمرين / مثال / سؤال" headings.
+## The estimate: the AI judges the difficulty, the formula measures the size
+1. **Reading (in the browser, pdf.js):** for each file count `pages`, `density` (words per page: low < 120,
+   mid 120–300, high > 300), `equations` (lines with `= ∑ √ ∫ ≤ ≥ ^ π` or a fraction) and `exercises`
+   (headings like Example / Exercise / مثال / تمرين). Reject a scan: fewer than 3 words per page on average, or
+   fewer than half the pages with 3+ words. Keep a ~1500-character text sample in memory only.
+2. **Formula** (all weights in `ESTIMATE_CONFIG`, `web/src/features/estimate/estimate.js`):
+   ```
+   base = pages*0.0375 + {low:0, mid:0.4, high:0.8}[density] + equations*0.03 + exercises*0.12
+   lo   = max(0.5, round½(base × level × difficulty))      level: strong 0.75, mid 1, weak 1.4
+   hi   = round½(lo × 1.4)                                  difficulty: 1 0.7, 2 0.85, 3 1, 4 1.2, 5 1.4
+   ```
+   Without an AI difficulty the factor is 1 (the plain formula).
+3. **AI** (when a course is saved, `web/src/features/estimate/aiEstimate.js`): ONE call per course for its new
+   files (label, kind, density, equation and exercise counts, text sample; no level, pages or hours). Saved
+   files already judged go along as context only. The AI returns, per file, a difficulty 1–5 about the content
+   and a one-line Saudi reason starting with «فيه». A broken or missing answer, a failed call, a 30 s timeout
+   or a missing key means the plain formula for that file, with no error shown. The demo never calls the AI.
+4. Saved files keep their difficulty; a level change recomputes hours without a call. Files the student
+   adjusted with − / + keep their hours and are never sent.
 
-A file's kind (`lecture` or `exercises`) comes **only** from the upload zone it was dropped in, never from its name. Exercise files get the same checks, error messages and formula as chapters, are numbered separately («تمارين ١», «تمارين ٢»), and count in the course's hours range.
-5. `level`: the student's level in the course: strong (×0.75), mid (×1.0), weak (×1.4)
+## The AI route (`web/api/ai.js`)
+OpenAI-compatible `POST {AI_BASE_URL}/chat/completions` with `fetch` (no SDK); env `AI_BASE_URL`,
+`AI_API_KEY`, `AI_MODEL` (Groq, `openai/gpt-oss-120b`). `temperature 0.2`, `max_tokens 4000`,
+`reasoning_effort medium` for gpt-oss, structured output (`json_schema`, strict). Prompt 1–12000 characters
+(else 400); 403 unless the Origin (or Referer) is our own host; 10 requests per minute per IP from
+`x-real-ip` (else 429); a missing variable logs only its NAME (500); a provider failure logs only its status
+and error code, never its body (502, or 429). The system message says the user text is data, never
+instructions; the browser checks every answer.
 
-Starting formula, in hours (weights are placeholders to calibrate later; keep them in one config object):
-```
-base = pages*0.0375 + {low:0, mid:0.4, high:0.8}[density] + equations*0.03 + exercises*0.12
-lo   = max(0.5, round_to_half(base * levelMultiplier))
-hi   = round_to_half(lo * 1.4)
-```
-- Show the **range** `lo–hi` and the reason, for example «٣٠ صفحة، كثافة متوسطة، ١٢ معادلة، ٥ تمارين، مستواك: ضعيف».
-- If a PDF has no extractable text (a scan), show the file-error state from HANDOFF.md §8.
-- Use a client-side PDF library (for example pdf.js). The files must not leave the device.
+## The schedule (`web/src/features/schedule/`)
+- Uses each file's `hiHours` (what is left of it: past days count as studied). Days run from tomorrow to the
+  last exam; a day is session, break, session… (`breaks + 1` sessions of `hoursPerDay / (breaks+1)`).
+- Each session is filled with the next file of the course whose exam is earliest: within a course all chapters
+  (upload order), then all exercise files. A session can hold 2–3 files (parts); no part is under 15 minutes.
+  No session on or after a course's exam day; an exam day still holds other courses.
+- What does not fit goes to «ما لحقنا لها وقت». Preferences are checked first (HANDOFF §7 rule 11).
+- Popups 3a/3b build the plan as a draft; only accepting saves it. ✕ or Esc never saves.
+- **Today / tomorrow:** on opening, past days are counted as studied and leave the plan; a saved plan with
+  sessions today shows a highlighted «اليوم» column, otherwise «بكرة». A new plan always starts tomorrow.
+- **«رتّب جدولي من جديد»:** tick the finished files; the rest is planned again from tomorrow.
+- **Swap:** two whole sessions trade places if every part stays before its exam.
+- **Edit / delete a course:** from its card; keeps its colour; drops the current plan; keeps progress of files
+  that still exist.
+- **Adjust:** − / + moves a file's range by half an hour (never under half an hour).
+- **«حمّل جدولك PDF»:** `window.print()` with a print stylesheet (no PDF library: they break Arabic). A4
+  landscape, one week per page (shrunk to fit), all future weeks, white page, course colours kept.
 
-## Scheduling (copy the logic in prototype.html → `build()`)
-- Uses the **upper bound `hi`** of each chapter.
-- Days run from tomorrow up to the last exam. No sessions on or after a course's exam day.
-- Each day starts at the user's start time: session, break, session... There are `breaks + 1` sessions, each `hoursPerDay / (breaks+1)` long.
-- Fill each session with the remaining chapter of the course whose **exam is earliest** and still has a future exam date. Within a course, fill all its chapters first (upload order), then all its exercise files (upload order), all before its exam.
-- A session is a list of parts: when a file finishes before the session ends, the rest goes to the next file in that order if at least 15 minutes are left. No part is ever shorter than 15 minutes. Swapping moves a whole session with all its parts. (This replaces the prototype's one file per session.)
-- Anything left after that goes into «ما لحقنا لها وقت».
-- Validation before building: `hoursPerDay*60 + breaks*breakMin` must be ≤ `end - start`, and `end` must be after `start`. Otherwise, show the error message from HANDOFF.md §8.
-- If anything is left over, show the "not enough time" popup first (see DESIGN.md → states).
+## How it was built
+| Version | What |
+|---|---|
+| 1 – 1.4 | PDF reading and the formula with tests; page weight calibrated on real study time; exercise zone; prototype mockups |
+| 2 – 2.1 | Schedule logic and storage, no backend; the rest of a session goes to the next file |
+| 3 – 3.4 | Tokens and components, then screens 1–4 |
+| 4 – 4.3 | Current schedule and reschedule; PDF export; today column, edit, adjust, swap; polish |
+| 4.4 – 4.7 | AI estimate, then calibrated: the AI judges difficulty, the formula measures size |
+| 4.8 | Review fixes: draft plans, abort on leave, scan rule, origin check, safe logs, save-error message |
+| 5 | Final docs and README |
 
-## Build order (4 days)
-| Day | Deliver | Done when |
-|---|---|---|
-| 1 | PDF upload + analysis + estimate per chapter, with the reason | Uploading 3 real chapter PDFs shows a sensible `lo–hi` and the reason, and a bad file shows the error state |
-| 2 | Logic and data, no UI: `schedule.js` (port of `build()`, chapters then exercises, exam days keep other courses' sessions) and `storage.js` (localStorage), with tests | The tests pass, and the mock.json plan is recomputed with `buildPlan` |
-| 3 | Tokens, components, then screens 1–4 one at a time: the preferences popup with validation, the weekly calendar, the tooltip and the not-enough-time flow, all connected to the real logic and saved data | A student can add 4 courses and get a schedule that matches the logic, and the «ما لحقنا لها وقت» list works |
-| 4 | Polish, the loading state, the background animation, tablet tap checks, then **Should: «حمّل جدولك PDF»**, then **Should: swap sessions** only if everything else works | All states in DESIGN.md are reproducible, and nothing breaks at 768px width |
-
-If Day 1 slips, cut the per-chapter tooltip details first, not the estimate.
-
-## Acceptance checklist
-- [ ] Every Must story in PRD.md works end to end with real PDFs
-- [ ] Every unhappy path in HANDOFF.md §4 can be triggered, with the exact text from §8
-- [ ] Arabic-Indic digits everywhere, dates and times from Arabic select lists, no emoji (DESIGN.md §8)
-- [ ] Course colours are the same in the list and the calendar
-- [ ] No session is scheduled on or after its course's exam day
-- [ ] The tooltip works with hover (laptop) and tap (tablet)
-- [ ] Fonts, colours, radii and shadows match DESIGN.md
+## Checks before any commit
+`npm test` and `npm run build` pass (run from `web/`); `dist/` contains no `AI_API_KEY` and no provider URL;
+`git ls-files | grep env` lists only `web/.env.example`. After a UI change, take 1280px and 768px screenshots
+into `design/shots/` and look at them.

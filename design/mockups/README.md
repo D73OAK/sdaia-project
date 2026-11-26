@@ -1,8 +1,13 @@
 # design/mockups/
 
-The reference every built screen is compared with. These are 1280px-wide screenshots of the current
-`prototype.html` (taken 2026-11-24, Version 1.4), one per screen and main state from HANDOFF.md §4.
-Retake them whenever `prototype.html` changes. If a mockup and DESIGN.md disagree, DESIGN.md wins.
+> **These show the FIRST design** (`prototype.html`, Version 1.4), kept for history only. The final app
+> (Version 4.8) is described by `DESIGN.md` and `HANDOFF.md` and shown in `design/shots/`. Many things were added
+> or changed after these: file ranges with − / +, the «اليوم» column, reschedule, edit and delete, swap rules,
+> the AI tooltip line, the save-error message and the print layout.
+
+During Versions 3 and 4 every built screen was compared with these. They are 1280px-wide screenshots of
+`prototype.html` (taken 2026-11-24, Version 1.4), one per screen and main state. If a mockup and DESIGN.md
+disagree, DESIGN.md wins.
 
 Most are 1280×800 viewport shots. The long screens are as tall as the page (marked *tall*).
 Motion is turned off (`prefers-reduced-motion`), so the background doodles stand still.

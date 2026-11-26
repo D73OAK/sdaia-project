@@ -43,27 +43,23 @@
   color: var(--ink);
   box-shadow: var(--shadow-btn-secondary);
 }
-/* hover: rise 2px, shadow 8px, a little brighter. (.is-hover / .is-pressed: components page only.) */
-.btn--primary:hover:not(:disabled),
-.btn--primary.is-hover {
+/* hover: rise 2px, shadow 8px, a little brighter. */
+.btn--primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 0 var(--primary-shadow);
   filter: brightness(1.06);
 }
-.btn--secondary:hover:not(:disabled),
-.btn--secondary.is-hover {
+.btn--secondary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 0 var(--secondary-shadow);
   filter: brightness(1.06);
 }
 /* pressed: sink 5px, shadow 1px. */
-.btn--primary:active:not(:disabled),
-.btn--primary.is-pressed {
+.btn--primary:active:not(:disabled) {
   transform: translateY(5px);
   box-shadow: 0 1px 0 var(--primary-shadow);
 }
-.btn--secondary:active:not(:disabled),
-.btn--secondary.is-pressed {
+.btn--secondary:active:not(:disabled) {
   transform: translateY(5px);
   box-shadow: 0 1px 0 var(--secondary-shadow);
 }
@@ -180,8 +176,7 @@
   color: var(--ink-2);
   opacity: 0.7;
 }
-.input:focus,
-.input.is-focus {
+.input:focus {
   border-color: var(--primary);
   outline: none;
 }
@@ -425,14 +420,6 @@
 /* On a course card the hours range is the most important number on the screen (DESIGN.md §6 Badge). */
 .course-card .badge--hours {
   font-size: var(--text-md);
-}
-.badge--exam {
-  background: var(--error-bg);
-  color: var(--error-ink);
-}
-.badge--success {
-  background: var(--mint);
-  color: var(--ink);
 }
 .badge--missing {
   background: var(--surface-2);

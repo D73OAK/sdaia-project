@@ -166,3 +166,6 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# Vercel CLI project link (created by `vercel link`)
+.vercel/

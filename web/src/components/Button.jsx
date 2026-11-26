@@ -1,7 +1,7 @@
 // Buttons (DESIGN.md §6 Button). Only ONE primary button per screen.
 //   variant: 'primary' | 'secondary' | 'link'
 //   status:  'loading' (spinner + «نرتّب جدولك...») | 'done' (mint, ✓ + «انحفظت المادة») | undefined
-// Hover and pressed come from CSS. `className` lets the components page force them for display only.
+// Hover and pressed come from CSS (:hover, :active). `className` adds a class for the screen's own layout.
 import Icon from './Icon.jsx';
 import { BUTTON_STATE, COMMON } from '../lib/strings.js';
 

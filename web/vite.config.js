@@ -38,7 +38,9 @@ function apiRoutes() {
           for await (const chunk of req) chunks.push(chunk);
           const headers = new Headers();
           for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string') headers.set(k, v);
-          if (!headers.has('x-forwarded-for')) headers.set('x-forwarded-for', req.socket.remoteAddress ?? '');
+          // The rate limit counts per IP and reads X-Real-IP (api/ai.js clientIp). Like Vercel, set it here
+          // from the socket, so a caller can never choose it.
+          headers.set('x-real-ip', req.socket.remoteAddress ?? 'unknown');
           const request = new Request(`http://${req.headers.host}${req.url}`, {
             method: req.method,
             headers,

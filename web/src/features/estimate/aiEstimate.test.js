@@ -103,6 +103,15 @@ describe('estimateCourse: the AI judges the difficulty, the formula measures the
     expect([...out.values()].every((e) => e.source === 'formula')).toBe(true);
   });
 
+  it('passes the signal to the call, so leaving the screen can cancel it', async () => {
+    const ask = vi.fn(async () => '{"files":[]}');
+    const leave = new AbortController();
+    const file = { key: 1, kind: 'lecture', index: 1, metrics: { pages: 10, density: 'mid', equations: 0, exercises: 0 } };
+    await estimateCourse({ name: 'x', level: 'mid', files: [file], signal: leave.signal }, ask);
+    expect(ask).toHaveBeenCalledWith(expect.any(String), { signal: leave.signal });
+  });
+
+
   it('makes no call when there is no file to ask about', async () => {
     const fetch = mockFetch('{}');
     expect((await estimateCourse({ ...course, files: [] })).size).toBe(0);
@@ -127,6 +136,16 @@ describe('checkJudgment', () => {
   ])('rejects %j', (a) => expect(checkJudgment(a)).toBeNull());
   it('keeps the reason on one line', () =>
     expect(checkJudgment({ difficulty: 3, reason: 'سطر\nثاني' }).reason).toBe('سطر ثاني'));
+  it.each([
+    ['فيه شرح نموذج OSI وبروتوكولات TCP/IP.', 'فيه شرح نموذج OSI وبروتوكولات TCP/IP'],
+    ['فيه جداول الحقيقة للبوابات المنطقية ... ', 'فيه جداول الحقيقة للبوابات المنطقية'],
+    ['فيه تعريفات للبرمجيات۔', 'فيه تعريفات للبرمجيات'],
+    ['فيه نماذج تطوير البرمجيات…', 'فيه نماذج تطوير البرمجيات'],
+    ['فيه نماذج تطوير البرمجيات… ', 'فيه نماذج تطوير البرمجيات'],
+    ['فيه أمثلة مثل 2.5 و TCP/IP v4.0', 'فيه أمثلة مثل 2.5 و TCP/IP v4.0'], // only a TRAILING period goes
+  ])('drops a trailing period: %j', (reason, expected) =>
+    expect(checkJudgment({ difficulty: 2, reason }).reason).toBe(expected));
+  it('rejects a reason that is only periods', () => expect(checkJudgment({ difficulty: 2, reason: ' . ' })).toBeNull());
 });
 
 describe('parseAnswer', () => {

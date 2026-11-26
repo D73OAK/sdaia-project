@@ -1,11 +1,12 @@
 // Screen 1: Home (HANDOFF.md §2). The title, one sentence, 3 steps, «رتب جدولك الان» and the demo link.
-// If the student already has saved courses, «رتب جدولك الان» opens the course list instead of a new course.
+// With saved courses (HANDOFF.md §4): «رتب جدولك الان» opens the course list instead of a new course, and the
+// demo link first asks with its own popup, because the demo replaces the saved courses and schedule.
 import { useState } from 'react';
 import Button from '../../components/Button.jsx';
 import Modal from '../../components/Modal.jsx';
 import { fmtNumber } from '../../lib/format.js';
 import { localToday } from '../../lib/options.js';
-import { APP_NAME, HOME, RESTART } from '../../lib/strings.js';
+import { APP_NAME, DEMO_CONFIRM, HOME } from '../../lib/strings.js';
 import { useApp } from '../../state.jsx';
 import { demoCourses } from './demo.js';
 import { go } from '../../routes.js';
@@ -62,18 +63,18 @@ export default function HomeScreen() {
 
       <Modal
         open={confirmDemo}
-        title={RESTART.title}
+        title={DEMO_CONFIRM.title}
         onClose={() => setConfirmDemo(false)}
         actions={
           <>
             <Button variant="secondary" onClick={() => setConfirmDemo(false)}>
-              {RESTART.no}
+              {DEMO_CONFIRM.no}
             </Button>
-            <Button onClick={loadDemo}>{RESTART.yes}</Button>
+            <Button onClick={loadDemo}>{DEMO_CONFIRM.yes}</Button>
           </>
         }
       >
-        <p>{RESTART.text}</p>
+        <p>{DEMO_CONFIRM.text}</p>
       </Modal>
     </section>
   );

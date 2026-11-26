@@ -146,3 +146,8 @@ select {
     transition: none !important;
   }
 }
+
+/* Saving in the browser failed (App.jsx, HANDOFF.md §8): the message sits at the top of every screen. */
+.save-error {
+  margin-block-end: var(--space-2);
+}

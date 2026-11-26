@@ -7,6 +7,7 @@
 //   AI_MODEL     e.g. openai/gpt-oss-120b
 //
 // Input:  POST { "prompt": "<the course as JSON text>" }   (1 to 12000 characters, else 400)
+//         Only from our own site: the Origin (or Referer) must match the request's host, else 403.
 // Output: { "text": "<the model's answer>" }  or  { "error": "<short Arabic message>" }
 // The browser checks the shape of the answer before using any of it (features/estimate/aiEstimate.js).
 
@@ -22,6 +23,7 @@ const PROVIDER_TIMEOUT_MS = 29000; // a bit under the browser's 30 s, so the bro
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60 * 1000;
 const hits = new Map(); // ip -> timestamps of its requests in the last minute
+let lastPrune = 0; // when IPs with no request in the last minute were last dropped from `hits`
 
 export const SYSTEM_MESSAGE = `You judge how difficult the content of each file of one university course is to study, on a scale from 1 to 5. You do NOT estimate hours: the app measures each file's size with its own formula (pages, words, equations, exercises) and applies the student's level, then scales the hours by your difficulty. So judge the content only, never its length and never the student.
 
@@ -40,7 +42,7 @@ Method. For each file, think it through in this order:
 1. Read the sample and name what the file actually covers (topics and skills), and its kind: slides with few words, dense text, math or problem solving, or exercises.
 2. Place it on the fixed scale above by its own content alone, as if it were the only file you were given. The number must be the same whichever other files come with it. Do not raise it for many pages or lower it for few: length is already counted.
 3. Only then look at the other files and alreadyJudged, as a check that the order makes sense. Never shift a number up or down to rank or spread the files relative to each other: several files may share a number, and all of them may be low or high. Change a number only if, on re-reading that file, you find your own placement in step 2 did not match the scale's description. The numbers in alreadyJudged are fixed.
-4. Write the reason: one short line in Saudi Arabic that names something concrete from the content (a topic, a skill, or a kind of exercise), never a general sentence. For example (from another subject, never copy it): good «فيه التكامل بالتعويض وتمارين على المساحات بين المنحنيات», bad «فيه مفاهيم مهمة تحتاج مراجعة».
+4. Write the reason: one short full sentence in Saudi Arabic that starts with «فيه» and names something concrete from the content (a topic, a skill, or a kind of exercise), never a bare title and never a general sentence. For example (from another subject, never copy it): good «فيه التكامل بالتعويض وتمارين على المساحات بين المنحنيات», bad «فيه مفاهيم مهمة تحتاج مراجعة».
 
 Reply with JSON only, no other text, in exactly this shape, one entry for every file id:
 {"files":[{"id":"f1","difficulty":3,"reason":"..."}]}
@@ -74,18 +76,41 @@ const MESSAGES = {
   tooMany: 'طلبات كثير، جرّب بعد دقيقة.',
   notReady: 'الخدمة مو جاهزة الحين.',
   failed: 'ما قدرنا نوصل للـAI، جرّب بعدين.',
+  forbidden: 'هالطلب مو من موقعنا.',
 };
 
 const json = (body, status) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 
+// The rate limit counts per client IP. X-Real-IP is set by the platform itself (Vercel; on the laptop the
+// Vite plugin sets it from the socket), so a caller cannot choose it. X-Forwarded-For can carry entries the
+// caller wrote, so it is only a fallback for platforms without X-Real-IP.
 function clientIp(request) {
+  const real = request.headers.get('x-real-ip');
+  if (real) return real.trim();
   const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return request.headers.get('x-real-ip') ?? 'unknown';
+  return forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+}
+
+// Only our own pages may call the route: a browser always sends Origin with a POST (Referer as a fallback),
+// and it must point to the same host the request came to. This stops other websites from using our key
+// from their visitors' browsers. (A script outside a browser can fake it; the rate limit is for that.)
+function fromOwnSite(request) {
+  const from = request.headers.get('origin') ?? request.headers.get('referer');
+  const hosts = new Set([new URL(request.url).host, request.headers.get('host')].filter(Boolean));
+  try {
+    return hosts.has(new URL(from).host); // no header, or "null" (an opaque origin): new URL throws
+  } catch {
+    return false;
+  }
 }
 
 function overLimit(ip, now = Date.now()) {
+  // Once a minute, drop the IPs with no request in the last minute, so the list does not grow forever.
+  if (now - lastPrune >= RATE_WINDOW_MS) {
+    for (const [key, times] of hits) if (!times.some((t) => now - t < RATE_WINDOW_MS)) hits.delete(key);
+    lastPrune = now;
+  }
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
   if (recent.length >= RATE_LIMIT) {
     hits.set(ip, recent);
@@ -116,10 +141,27 @@ export function requestBody(model, prompt) {
   return body;
 }
 
-// For tests: start every test with an empty rate-limit memory.
-export const resetRateLimit = () => hits.clear();
+// For tests: start every test with an empty rate-limit memory, and see how many IPs it holds.
+export const resetRateLimit = () => {
+  hits.clear();
+  lastPrune = 0;
+};
+export const rateLimitSize = () => hits.size;
+
+// The provider's error code or type (e.g. "invalid_api_key"), never any other part of its answer:
+// the message can quote the student's text. Only a short code-like word is kept.
+async function providerErrorCode(res) {
+  try {
+    const data = await res.json();
+    const code = data?.error?.code ?? data?.error?.type;
+    return typeof code === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(code) ? code : 'no code';
+  } catch {
+    return 'no code';
+  }
+}
 
 export async function POST(request) {
+  if (!fromOwnSite(request)) return json({ error: MESSAGES.forbidden }, 403);
   if (overLimit(clientIp(request))) return json({ error: MESSAGES.tooMany }, 429);
 
   let prompt;
@@ -158,8 +200,7 @@ export async function POST(request) {
   }
 
   if (!res.ok) {
-    const detail = (await res.text().catch(() => '')).slice(0, 300);
-    console.error(`[api/ai] Provider answered ${res.status}: ${detail}`);
+    console.error(`[api/ai] Provider answered ${res.status} (${await providerErrorCode(res)})`); // never the body
     return json({ error: res.status === 429 ? MESSAGES.tooMany : MESSAGES.failed }, res.status === 429 ? 429 : 502);
   }
 

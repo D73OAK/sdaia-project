@@ -1,7 +1,7 @@
 // state.jsx: the app's data in one place (React useReducer + one Context), saved in the browser.
 // On start it reads what was saved (lib/storage.js); after every change it saves again.
 // Screens read it with useApp() and change it only by sending an action: dispatch({ type: '...' }).
-import { createContext, useContext, useEffect, useReducer } from 'react';
+import { createContext, useContext, useEffect, useReducer, useState } from 'react';
 import { clearData, emptyData, loadData, saveData } from './lib/storage.js';
 import { canAddCourse } from './features/courses/courses.js';
 import { pruneProgress, settlePlan } from './features/schedule/progress.js';
@@ -49,19 +49,30 @@ export function reducer(state, action) {
   }
 }
 
+// Saves the latest data (an empty app keeps nothing in the browser). Returns false only when saving
+// failed (storage full or blocked): the data then lives only in this tab and is lost when it closes.
+export function persist(state, store) {
+  const empty = !state.courses.length && !state.preferences && !state.plan && !state.progress.finished.length;
+  if (empty) {
+    clearData(store);
+    return true; // nothing to lose
+  }
+  return saveData(state, store);
+}
+
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   // On start: read what was saved, then count the days that passed since (§7 rule 16).
   const [state, dispatch] = useReducer(reducer, undefined, () => reducer(loadData(), { type: 'settle', today: localToday() }));
 
+  // saveFailed: the last save did not work; the screens show the §8 message (App.jsx).
+  const [saveFailed, setSaveFailed] = useState(false);
   useEffect(() => {
-    // An empty app keeps nothing in the browser; otherwise save the latest data.
-    if (!state.courses.length && !state.preferences && !state.plan && !state.progress.finished.length) clearData();
-    else saveData(state);
+    setSaveFailed(!persist(state));
   }, [state]);
 
-  return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={{ state, dispatch, saveFailed }}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

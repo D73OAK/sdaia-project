@@ -1,29 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import mock from '../data/mock.json';
 import { STORAGE_KEY, cleanData, clearData, emptyData, loadData, saveData } from './storage.js';
-
-// A stand-in for the browser's localStorage (Node has none).
-function fakeStore(initial = {}) {
-  const map = new Map(Object.entries(initial));
-  return {
-    map,
-    getItem: (k) => (map.has(k) ? map.get(k) : null),
-    setItem: (k, v) => map.set(k, String(v)),
-    removeItem: (k) => map.delete(k),
-  };
-}
-// A store that refuses everything, like a blocked or full localStorage.
-const brokenStore = {
-  getItem() {
-    throw new Error('SecurityError');
-  },
-  setItem() {
-    throw new Error('QuotaExceededError');
-  },
-  removeItem() {
-    throw new Error('SecurityError');
-  },
-};
+import { brokenStore, fakeStore } from '../test/stores.js';
 
 const { _note, ...plan } = mock.plan;
 const data = {

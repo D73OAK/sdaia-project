@@ -9,7 +9,8 @@ import { densityOf } from '../features/estimate/estimate.js';
 
 export const MAX_FILE_BYTES = 40 * 1024 * 1024; // 40 MB (HANDOFF.md §7 rule 2)
 
-// Below this many words per page we treat the PDF as a scan with no real text.
+// Below this many words per page we treat the PDF as a scan with no real text. A single page with fewer
+// words than this counts as a page without text (a scanned page, or just a page number).
 const NO_TEXT_WORDS_PER_PAGE = 3;
 
 // A line counts as an equation if it has one of these symbols or a fraction like 3/4 (AGENT_BRIEF.md).
@@ -69,22 +70,29 @@ export function itemsToLines(items) {
 }
 
 // pages: an array with one array of text lines per page.
-// Returns the counted numbers, or { error: 'no_text' } when there is (almost) no text.
+// Returns the counted numbers, or { error: 'no_text' } when there is (almost) no text: too few words per
+// page on average, OR fewer than half of the pages with text (a mostly scanned PDF whose few typed pages
+// would otherwise lift the average).
 // The density thresholds live in estimate.js, next to the other weights.
 export function measurePages(pages) {
   const pageCount = pages.length;
   let words = 0;
   let equations = 0;
   let exercises = 0;
+  let pagesWithText = 0;
   for (const lines of pages) {
+    let pageWords = 0;
     for (const line of lines) {
-      words += countWords(line);
+      pageWords += countWords(line);
       if (isEquationLine(line)) equations += 1;
       if (isExerciseHeading(line)) exercises += 1;
     }
+    words += pageWords;
+    if (pageWords >= NO_TEXT_WORDS_PER_PAGE) pagesWithText += 1;
   }
   const wordsPerPage = pageCount ? Math.round(words / pageCount) : 0;
   if (wordsPerPage < NO_TEXT_WORDS_PER_PAGE) return { error: 'no_text' };
+  if (pagesWithText * 2 < pageCount) return { error: 'no_text' };
   return { pages: pageCount, density: densityOf(wordsPerPage), wordsPerPage, equations, exercises };
 }
 

@@ -1,10 +1,11 @@
 // Popups 3a (preferences) and 3b (not enough time), used by the course list («خلصت، رتّب جدولي») and the
 // schedule («غيّر ساعاتي»). Render it only while it is open: it starts from the saved preferences each time.
-//   «اطلع جدولي»: check the numbers (§7 rule 11), build the plan, save both, then
-//     - something left over and there is a schedule -> popup 3b
-//     - otherwise -> the schedule
-//   3b «ايه، أزيد ساعاتي» -> back to 3a with the same numbers; «لا، اطلع الجدول كذا» -> the schedule.
-//   ✕ or Esc closes without changing anything.
+//   «اطلع جدولي»: check the numbers (§7 rule 11), build the plan as a draft, then (planFlow.js)
+//     - something left over and there is a schedule -> popup 3b, nothing saved yet
+//     - otherwise -> save the preferences and the plan, open the schedule
+//   3b «ايه، أزيد ساعاتي» -> back to 3a with the draft numbers, nothing saved;
+//      «لا، اطلع الجدول كذا» -> save the draft, open the schedule.
+//   ✕ or Esc at any point closes without saving anything (HANDOFF.md §4).
 // startAt="short" opens on popup 3b for a plan already saved (used by «رتّب الباقي»).
 // Every plan starts from what is left to study (progress.js, §7 rules 16–17).
 import { useState } from 'react';
@@ -18,7 +19,7 @@ import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
 import { DEFAULT_PREFERENCES, buildPlan, validatePreferences } from './schedule.js';
 import { minutesLeft } from './progress.js';
-import { needsShortPopup } from './view.js';
+import { startFlow, step } from './planFlow.js';
 import './plan-flow.css';
 
 const TIMES = timeOptions();
@@ -57,7 +58,10 @@ export default function PlanFlow({ onClose, startAt = 'prefs' }) {
   const { state, dispatch } = useApp();
   const [form, setForm] = useState(() => toForm(state.preferences ?? DEFAULT_PREFERENCES));
   const [error, setError] = useState('');
-  const [stage, setStage] = useState(startAt); // 'prefs' | 'short'
+  // { stage, draft }. Opened on 3b by «رتّب الباقي», the plan already saved is the draft.
+  const [flow, setFlow] = useState(() =>
+    startFlow(startAt, state.plan && state.preferences ? { preferences: state.preferences, plan: state.plan } : null),
+  );
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
 
   function submit(e) {
@@ -70,20 +74,23 @@ export default function PlanFlow({ onClose, startAt = 'prefs' }) {
     }
     setError('');
     const plan = buildPlan(state.courses, prefs, localToday(), (ch) => minutesLeft(ch, state.progress));
-    dispatch({ type: 'setPlan', preferences: prefs, plan });
-    if (needsShortPopup(plan)) setStage('short');
-    else openSchedule();
+    send({ type: 'submit', preferences: prefs, plan });
   }
 
-  function openSchedule() {
+  // Runs one planFlow.js step: an accepted plan is saved and the schedule opens; otherwise the next popup.
+  // ✕ or Esc calls onClose directly: nothing is saved before the student accepts.
+  function send(event) {
+    const r = step(flow, event);
+    if (!r.save) return setFlow(r.flow);
+    dispatch({ type: 'setPlan', ...r.save });
     onClose();
     go(ROUTES.schedule);
   }
 
-  const plan = state.plan;
+  const { draft } = flow; // what 3b shows
   return (
     <>
-      <Modal open={stage === 'prefs'} title={T.title} onClose={onClose}>
+      <Modal open={flow.stage === 'prefs'} title={T.title} onClose={onClose}>
         <form className="prefs" noValidate onSubmit={submit}>
           <Input id="pref-hours" label={T.hours} numeric value={form.hoursPerDay} onChange={set('hoursPerDay')} fieldClassName="prefs__field" />
           <Input id="pref-breaks" label={T.breaks} numeric value={form.breaks} onChange={set('breaks')} fieldClassName="prefs__field" />
@@ -98,20 +105,26 @@ export default function PlanFlow({ onClose, startAt = 'prefs' }) {
       </Modal>
 
       <Modal
-        open={stage === 'short' && Boolean(plan)}
+        open={flow.stage === 'short' && Boolean(draft)}
         title={SHORT.title}
         onClose={onClose}
         actions={
           <>
-            <Button variant="secondary" onClick={openSchedule}>
+            <Button variant="secondary" onClick={() => send({ type: 'keep' })}>
               {SHORT.keep}
             </Button>
-            <Button onClick={() => setStage('prefs')}>{SHORT.more}</Button>
+            <Button onClick={() => send({ type: 'more' })}>{SHORT.more}</Button>
           </>
         }
       >
-        {plan && (
-          <p>{SHORT.text(fmtHours(plan.needHours), fmtNumber(state.preferences.hoursPerDay), fmtHours(plan.haveHours))}</p>
+        {draft && (
+          <p>
+            {SHORT.text(
+              fmtHours(draft.plan.needHours),
+              fmtNumber(draft.preferences.hoursPerDay),
+              fmtHours(draft.plan.haveHours),
+            )}
+          </p>
         )}
       </Modal>
     </>

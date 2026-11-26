@@ -147,6 +147,21 @@ describe('measurePages', () => {
   it('reports no_text for a scan', () => {
     expect(measurePages([[], [], ['p. 3']])).toEqual({ error: 'no_text' });
   });
+
+  // A mostly scanned PDF: 2 typed pages full of text lift the average above the limit, but 8 of 10
+  // pages have no text, so it is rejected like a scan.
+  const typed = ['word '.repeat(300).trim()];
+  it('reports no_text when fewer than half of the pages have text, even if the average passes', () => {
+    const pages = [typed, typed, ...Array.from({ length: 8 }, () => [])];
+    expect(Math.round((2 * 300) / 10)).toBeGreaterThanOrEqual(3); // the average alone would pass
+    expect(measurePages(pages)).toEqual({ error: 'no_text' });
+  });
+  it('a page with only a page number counts as a page without text', () => {
+    expect(measurePages([typed, ['12'], ['13']])).toEqual({ error: 'no_text' });
+  });
+  it('accepts exactly half of the pages with text', () => {
+    expect(measurePages([typed, typed, [], []]).pages).toBe(4);
+  });
 });
 
 describe('the text sample for the AI', () => {

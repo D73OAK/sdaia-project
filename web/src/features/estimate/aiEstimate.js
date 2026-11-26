@@ -73,13 +73,19 @@ function readJson(text) {
 }
 
 // Checks one file's answer: a whole difficulty from 1 to 5 and a non-empty reason.
-// Returns { difficulty, reason } (the reason on one line) or null.
+// Returns { difficulty, reason } (the reason on one line, without a trailing period) or null.
 export function checkJudgment(answer) {
   if (!answer || typeof answer !== 'object') return null;
   const { difficulty, reason } = answer;
   if (!DIFFICULTIES.includes(difficulty)) return null;
   if (typeof reason !== 'string') return null;
-  const line = reason.replace(/\s+/g, ' ').trim().slice(0, MAX_REASON_CHARS);
+  // The tooltip line is not a sentence that ends: drop trailing periods («.», the Arabic «۔») and «…».
+  const line = reason
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[.۔…]+$/u, '')
+    .trim()
+    .slice(0, MAX_REASON_CHARS);
   if (!line) return null;
   return { difficulty, reason: line };
 }
@@ -110,8 +116,8 @@ export const aiEstimate = (metrics, level, { difficulty, reason }) => ({
 //   judged by the AI: { loHours, hiHours, reason, source: 'ai', aiReason, difficulty }
 //   the formula:      { loHours, hiHours, reason, source: 'formula' }
 // `reason` is always the formula's counted reason (pages, density …), the tooltip's first lines.
-// `ask` is lib/ai.js's askAI; tests pass their own.
-export async function estimateCourse({ name, level, files, context = [] }, ask = askAI) {
+// `ask` is lib/ai.js's askAI; tests pass their own. `signal` (optional) cancels the call when the screen is left.
+export async function estimateCourse({ name, level, files, context = [], signal }, ask = askAI) {
   const result = new Map(files.map((f) => [f.key, { ...estimateChapter(f.metrics, level), source: 'formula' }]));
   if (!files.length) return result;
 
@@ -120,7 +126,7 @@ export async function estimateCourse({ name, level, files, context = [] }, ask =
 
   let text;
   try {
-    text = await ask(prompt);
+    text = await ask(prompt, { signal });
   } catch {
     return result; // failed, timed out or no key: the formula for every file, no message
   }

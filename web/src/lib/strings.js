@@ -251,3 +251,14 @@ export const UPLOAD_ZONE = {
 export const fileLabel = (kind, numberText) => `${kind === 'exercises' ? 'تمارين' : 'شابتر'} ${numberText}`;
 
 
+
+// §8: saving in the browser failed (storage full or blocked). Shown at the top of every screen.
+export const SAVE_ERROR = 'ما قدرنا نحفظ بياناتك في هالمتصفح، فبتضيع لو سكّرت الصفحة. حمّل جدولك PDF عشان ما يضيع.';
+
+// Home: the popup before the demo replaces saved courses (§4, §8).
+export const DEMO_CONFIRM = {
+  title: 'تجرّب البيانات التجريبية؟',
+  text: 'بتنحذف موادك وجدولك الحاليين، وتطلع بدالها مواد تجريبية.',
+  no: 'لا، خلّ موادي',
+  yes: 'ايه، جرّبها',
+};

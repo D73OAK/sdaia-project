@@ -106,6 +106,16 @@ export default function CourseEntryScreen({ courseId }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const reupload = useRef({ input: null, kind: null, key: null });
   const saving = useRef(false); // a second click while the AI answers must not save twice
+  // Leaving the screen (browser Back) while the AI answers: abort the request and stop the save, so the
+  // course is not saved and the app does not jump to the course list afterwards. The aborted signal is
+  // also the "the student left" flag.
+  const leaving = useRef(null);
+  useEffect(() => {
+    const aborter = new AbortController();
+    leaving.current = aborter;
+    return () => aborter.abort();
+  }, []);
+  const left = () => leaving.current.signal.aborted;
 
   const backTo = state.courses.length ? ROUTES.courses : ROUTES.home;
   const problems = draftProblems({ name, files, level, examDate }, today);
@@ -226,9 +236,12 @@ export default function CourseEntryScreen({ courseId }) {
     if (toAsk.length) {
       const started = Date.now();
       setLoading({ done: 0, total: toAsk.length });
-      fromAI = await estimateCourse({ name, level, files: toAsk, context: judgedContext(numbered) });
+      const { signal } = leaving.current;
+      fromAI = await estimateCourse({ name, level, files: toAsk, context: judgedContext(numbered), signal });
+      if (left()) return; // the student left while the AI answered: save nothing
       setLoading({ done: toAsk.length, total: toAsk.length });
       await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - started)));
+      if (left()) return;
       setLoading(null);
     }
     const item = (f) => ({
@@ -252,7 +265,7 @@ export default function CourseEntryScreen({ courseId }) {
     dispatch(editing ? { type: 'updateCourse', course } : { type: 'addCourse', course });
     setSaved(true);
     await wait(DONE_MS);
-    go(ROUTES.courses);
+    if (!left()) go(ROUTES.courses); // left during «انحفظت المادة»: stay where the student went
   }
 
   function deleteCourse() {

@@ -10,6 +10,8 @@ import {
   itemsToLines,
   measurePages,
   readChapter,
+  spreadText,
+  textSample,
 } from './pdf.js';
 
 const bytes = (text) => new TextEncoder().encode(text);
@@ -144,5 +146,23 @@ describe('measurePages', () => {
   });
   it('reports no_text for a scan', () => {
     expect(measurePages([[], [], ['p. 3']])).toEqual({ error: 'no_text' });
+  });
+});
+
+describe('the text sample for the AI', () => {
+  it('keeps short text whole, with spaces squeezed', () => {
+    expect(spreadText('  a   b\n c ', 1500)).toBe('a b c');
+  });
+
+  it('spreads long text across the start, the middle and the end, within the limit', () => {
+    const text = 'S'.repeat(1000) + 'M'.repeat(1000) + 'E'.repeat(1000);
+    const sample = spreadText(text, 300);
+    expect(sample.length).toBeLessThanOrEqual(300);
+    const [start, mid, end] = sample.split(' … ');
+    expect([start[0], mid[0], end[0]]).toEqual(['S', 'M', 'E']);
+  });
+
+  it('turns Arabic letter shapes back into letters', () => {
+    expect(textSample([['ﻣﺜﺎﻝ']])).toBe('مثال');
   });
 });

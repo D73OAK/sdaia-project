@@ -213,9 +213,22 @@ export const FILE_ERROR = {
   unreadable: 'الملف مقفول أو تالف، فما نقدر نقراه. افتحه واحفظه من جديد، أو احذفه.', // password-protected or damaged
 };
 
-// §8: the loading text. {ن} is the number of files; the noun follows Arabic number agreement.
-export const loadingText = (count, countText) =>
-  `نقرأ ${countText} ${count >= 3 && count <= 10 ? 'ملفات' : 'ملف'} ونحسب وقت مذاكرتك...`;
+// §8: the loading text. {ن} is the number of files, with Arabic number agreement:
+// 1 «ملف», 2 «ملفين» (no number), 3–10 «٣ ملفات», 11 and up «١١ ملف».
+export function loadingText(count, countText) {
+  const files =
+    count === 1 ? 'ملف' : count === 2 ? 'ملفين' : `${countText} ${count >= 3 && count <= 10 ? 'ملفات' : 'ملف'}`;
+  return `نقرأ ${files} ونحسب وقت مذاكرتك...`;
+}
+
+// The AI study-time estimate (HANDOFF.md §7 rule 5, §8).
+export const AI_TEXT = {
+  privacy: 'نرسل جزء من نص ملفاتك للـAI عشان يقدّر صعوبتها، وما نحفظه.', // under the upload zones
+  draft: 'الرقم مبدئي، والـAI يضبطه لما تحفظ.', // under the course total
+  tooltipLine: (reason) => `تقدير الـAI: ${reason}`, // last tooltip line of an AI estimate
+};
+// Thrown by lib/ai.js. Never shown: a failed AI call falls back to the formula without a message.
+export const AI_ERROR = 'ما قدرنا نوصل للـAI، جرّب بعدين.';
 
 // The reason shown with each chapter estimate (same shape as mock.json and the §8 tooltip lines).
 // Parts are separated with «،», never a middle dot: next to a number the dot looks like the Arabic zero «٠».

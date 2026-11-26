@@ -1,5 +1,7 @@
 // pdf.js: reads a chapter PDF on the student's device and counts what the estimate needs.
-// The file never leaves the browser. Only the counted numbers are kept, never the PDF or its text.
+// The file never leaves the browser. Only the counted numbers are saved, never the PDF or its text.
+// A short text sample (SAMPLE_CHARS, spread across the file) stays in memory on screen 2 so the AI can
+// judge how hard the content is when the course is saved (features/estimate/aiEstimate.js); it is never saved.
 //
 // Most of this file is pure functions on plain text (easy to test). Only readChapter() touches
 // a real file, and it loads Mozilla's PDF.js library on demand, the first time a file is read.
@@ -86,6 +88,26 @@ export function measurePages(pages) {
   return { pages: pageCount, density: densityOf(wordsPerPage), wordsPerPage, equations, exercises };
 }
 
+// ---------- the text sample for the AI ----------
+
+export const SAMPLE_CHARS = 1500;
+
+// Up to `maxChars` of `text`, spread across it: a piece from the start, the middle and the end,
+// joined with « … ». Shorter text comes back whole. Spaces are squeezed so they do not waste the budget.
+export function spreadText(text, maxChars) {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= maxChars) return clean;
+  const gap = ' … ';
+  const part = Math.floor((maxChars - 2 * gap.length) / 3);
+  if (part < 1) return '';
+  const mid = Math.floor((clean.length - part) / 2);
+  return [clean.slice(0, part), clean.slice(mid, mid + part), clean.slice(-part)].join(gap);
+}
+
+// The sample of a whole file. NFKC turns Arabic letter shapes back into letters the AI can read.
+export const textSample = (pages, maxChars = SAMPLE_CHARS) =>
+  spreadText(pages.map((lines) => lines.join(' ')).join(' ').normalize('NFKC'), maxChars);
+
 // Checks a File before reading it. Returns an error code ('not_pdf' | 'too_big') or null.
 export async function checkFile(file) {
   const head = new Uint8Array(await file.slice(0, 1024).arrayBuffer());
@@ -131,7 +153,7 @@ function loadPdfjs() {
 // Reads one uploaded file. `kind` comes ONLY from the upload zone it was dropped in (HANDOFF.md §7 rule 6):
 // 'lecture' for «ملفات الشابترات», 'exercises' for «ملفات التمارين». Both kinds get the same checks.
 // Never throws for a bad file; it resolves with the error code instead:
-//   { fileName, fileSizeBytes, kind, metrics }  or  { fileName, fileSizeBytes, kind, error }
+//   { fileName, fileSizeBytes, kind, metrics, sample }  or  { fileName, fileSizeBytes, kind, error }
 // error is one of 'not_pdf' | 'too_big' | 'no_text' | 'unreadable' (damaged or password-protected).
 export async function readChapter(file, kind) {
   if (kind !== 'lecture' && kind !== 'exercises') throw new Error(`Unknown kind: ${kind}`);
@@ -142,7 +164,7 @@ export async function readChapter(file, kind) {
     const pdfjs = await loadPdfjs();
     const pages = await extractPages(pdfjs, new Uint8Array(await file.arrayBuffer()));
     const measured = measurePages(pages);
-    return measured.error ? { ...base, error: measured.error } : { ...base, metrics: measured };
+    return measured.error ? { ...base, error: measured.error } : { ...base, metrics: measured, sample: textSample(pages) };
   } catch (err) {
     console.error('Could not read PDF:', file.name, err); // for developers; the user sees the error state
     return { ...base, error: 'unreadable' };

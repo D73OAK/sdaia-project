@@ -4,6 +4,8 @@
 // size) first, then the full reading (pages, text, scans, locked files). A healthy file then shows its hours
 // range with − and + (§7 rule 19) once a level is chosen. Only the counted numbers are saved, never the PDF.
 // Edit mode (§7 rule 18): the saved files show as chips by name; «احذف المادة» asks before deleting.
+// On save, ONE AI call estimates the files that need it (§7 rule 5, features/estimate/aiEstimate.js),
+// behind the same loading overlay; any failure falls back to the formula with no message.
 import { useEffect, useRef, useState } from 'react';
 import Button from '../../components/Button.jsx';
 import { Card } from '../../components/Cards.jsx';
@@ -17,6 +19,7 @@ import { dateOptions, localToday } from '../../lib/options.js';
 import { checkFile, readChapter } from '../../lib/pdf.js';
 import {
   ADJUST,
+  AI_TEXT,
   APP_NAME,
   COMMON,
   COURSE_EDIT,
@@ -28,6 +31,7 @@ import {
 } from '../../lib/strings.js';
 import { go, ROUTES } from '../../routes.js';
 import { useApp } from '../../state.jsx';
+import { estimateCourse } from '../estimate/aiEstimate.js';
 import { STEP_HOURS, estimateChapter, shiftRange } from '../estimate/estimate.js';
 import {
   canAddCourse,
@@ -35,7 +39,9 @@ import {
   draftProblems,
   freeColorIndex,
   hasProblems,
+  keptEstimate,
   makeCourse,
+  needsAI,
   newCourseId,
   nextOrder,
 } from './courses.js';
@@ -69,7 +75,8 @@ let nextKey = 1; // a stable key for each file on this screen
 //   { key, name, file?, saved?, read?, error?, adjusted }
 //   file     a File picked now (kept in memory only, never saved)
 //   saved    the chapter saved before (edit mode)
-//   read     what readChapter returned (metrics …), or the saved chapter's numbers
+//   read     what readChapter returned (metrics, and the text sample for the AI: memory only),
+//            or the saved chapter's numbers
 //   adjusted { loHours, hiHours } after − / +, else null
 const fromSaved = (ch) => ({
   key: nextKey++,
@@ -97,6 +104,7 @@ export default function CourseEntryScreen({ courseId }) {
   const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const reupload = useRef({ input: null, kind: null, key: null });
+  const saving = useRef(false); // a second click while the AI answers must not save twice
 
   const backTo = state.courses.length ? ROUTES.courses : ROUTES.home;
   const problems = draftProblems({ name, files, level, examDate }, today);
@@ -108,12 +116,16 @@ export default function CourseEntryScreen({ courseId }) {
     return undefined;
   };
 
-  // The hours of a healthy file: its own adjusted range, or the estimate for the chosen level.
+  // The hours of a healthy file: its own adjusted range, its saved estimate (same level, edit mode),
+  // or the formula for the chosen level until the AI sets it on save.
   const rangeOf = (f) => {
     if (f.error || !f.read?.metrics || !level) return null;
-    return f.adjusted ?? estimateChapter(f.read.metrics, level);
+    return f.adjusted ?? keptEstimate(f, level, editing?.level) ?? estimateChapter(f.read.metrics, level);
   };
-  const healthy = KINDS.flatMap((k) => files[k]).map(rangeOf).filter(Boolean);
+  const healthyFiles = KINDS.flatMap((k) => files[k]).filter((f) => rangeOf(f));
+  const healthy = healthyFiles.map(rangeOf);
+  // «الرقم مبدئي»: only when saving will ask the AI about at least one file shown.
+  const draftTotal = healthyFiles.some((f) => needsAI(f, level, editing?.level));
   const total = healthy.reduce((s, r) => ({ lo: s.lo + r.loHours, hi: s.hi + r.hiHours }), { lo: 0, hi: 0 });
 
   // A course id that no longer exists (deleted elsewhere): back to the list.
@@ -201,6 +213,37 @@ export default function CourseEntryScreen({ courseId }) {
       focusField(FIELD_ID[first]);
       return;
     }
+    if (saving.current) return;
+    saving.current = true;
+    // One AI call for the files that need it, numbered as they will be saved. Never throws.
+    const toAsk = KINDS.flatMap((kind) =>
+      files[kind]
+        .map((f, i) => ({ f, kind, index: i + 1 }))
+        .filter(({ f }) => needsAI(f, level, editing?.level))
+        .map(({ f, kind, index }) => ({
+          key: f.key,
+          kind,
+          index,
+          metrics: f.read.metrics,
+          sample: f.read.sample,
+          previousReason: f.saved?.estimate?.aiReason,
+        })),
+    );
+    let fromAI = new Map();
+    if (toAsk.length) {
+      const started = Date.now();
+      setLoading({ done: 0, total: toAsk.length });
+      fromAI = await estimateCourse({ name, level, files: toAsk });
+      setLoading({ done: toAsk.length, total: toAsk.length });
+      await wait(Math.max(0, MIN_LOADING_MS - (Date.now() - started)));
+      setLoading(null);
+    }
+    const item = (f) => ({
+      saved: f.saved,
+      read: f.read,
+      adjusted: f.adjusted,
+      estimate: fromAI.get(f.key) ?? keptEstimate(f, level, editing?.level),
+    });
     const course = makeCourse({
       id: editing?.id ?? newCourseId(state.courses),
       name,
@@ -209,8 +252,8 @@ export default function CourseEntryScreen({ courseId }) {
       order: editing?.order ?? nextOrder(state.courses),
       color: editing ? colorIndexOf(editing) : freeColorIndex(state.courses),
       files: {
-        lecture: files.lecture.map((f) => ({ saved: f.saved, read: f.read, adjusted: f.adjusted })),
-        exercises: files.exercises.map((f) => ({ saved: f.saved, read: f.read, adjusted: f.adjusted })),
+        lecture: files.lecture.map(item),
+        exercises: files.exercises.map(item),
       },
     });
     dispatch(editing ? { type: 'updateCourse', course } : { type: 'addCourse', course });
@@ -279,10 +322,13 @@ export default function CourseEntryScreen({ courseId }) {
             </UploadZone>
           ))}
 
+          <p className="course-entry__note">{AI_TEXT.privacy}</p>
+
           {healthy.length > 0 && (
-            <p className="course-entry__total" aria-live="polite">
-              {ADJUST.total(fmtRange(total.lo, total.hi), total.hi)}
-            </p>
+            <div className="course-entry__sum" aria-live="polite">
+              <p className="course-entry__total">{ADJUST.total(fmtRange(total.lo, total.hi), total.hi)}</p>
+              {draftTotal && <p className="course-entry__note">{AI_TEXT.draft}</p>}
+            </div>
           )}
 
           <Pills

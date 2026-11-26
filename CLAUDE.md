@@ -19,6 +19,11 @@ v1 decisions (approved 2026-11-24):
 - Estimate: 5 factors only (pages, words-per-page density, equations, exercises, level). Formula and weights
   are in HANDOFF.md §7 rule 5, all in ONE config object (`ESTIMATE_CONFIG` in `estimate.js`).
   Levels: weak ×1.4, mid ×1, strong ×0.75. The weights are placeholders, to calibrate later.
+- AI estimate (Version 4.4, approved 2026-11-26): the AI decides the study time, the formula is the failsafe.
+  On save (screen 2, new or edit): ONE call per course through `web/api/ai.js`, with each file's numbers,
+  the formula range as a reference, and a text sample (~1500 chars, never stored). Each file's answer is
+  checked (`aiEstimate.js`, HANDOFF.md §7 rule 5); a bad range, a failed call, a 15 s timeout or a missing
+  key means the formula, with no error shown. Hand-adjusted files are never sent. The demo never calls it.
 - Course entry has two upload zones: «ملفات الشابترات» (required) and «ملفات التمارين» (optional).
   A file's kind comes ONLY from its zone, never from its name (HANDOFF.md §7 rule 6). Exercise files get the
   same checks, messages and formula, are numbered separately («تمارين ١»), and count in the course range.
@@ -29,7 +34,8 @@ v1 decisions (approved 2026-11-24):
   Within a course: all chapters first (upload order), then all exercise files, all before its exam.
 - No backend and no accounts in this version. "Backend" means the logic and data layer in the browser:
   courses, preferences and the plan are saved in localStorage (`lib/storage.js`). PDFs are never stored,
-  only the counted numbers. The student moves the schedule to other devices by downloading it as a PDF.
+  only the counted numbers. The one server piece is the AI route (`web/api/ai.js`, a Vercel function):
+  it holds the key and stores nothing. A text sample of each file leaves the device only for that call. The student moves the schedule to other devices by downloading it as a PDF.
 - «حمّل جدولك PDF» (a Should story): `window.print()` + a print stylesheet, no PDF library (they break
   Arabic). Rules in HANDOFF.md §7 rule 15.
 - An exam day still holds sessions of other courses whose exams are later (shown next to the exam card).
@@ -37,7 +43,8 @@ v1 decisions (approved 2026-11-24):
 
 Out of scope: accounts, login, cross-device sync; drag and drop; non-PDF files; reminders and notifications;
 sharing; progress tracking and stats (except the light version approved for Version 4: past days count as
-studied, and «رتّب جدولي من جديد»); OCR; recording actual study time; success measurement; AI features.
+studied, and «رتّب جدولي من جديد»); OCR; recording actual study time; success measurement; AI features
+other than the Version 4.4 study-time estimate.
 If I ask for something out of scope, say so before building it.
 
 ## Design
@@ -55,11 +62,12 @@ If I ask for something out of scope, say so before building it.
 - Routing: the starter's hash switch in `App.jsx`. No router library.
 - pdfjs-dist 6.5.438 (Mozilla PDF.js): reads page count and text in the browser, loaded on first use.
 - Vitest 3.2.4 (the newest line that supports Vite 5): tests for the PDF counting, estimate and schedule logic.
-- Backend: none.
+- Backend: none, except `web/api/ai.js`, one Vercel serverless function (`export async function POST`) that
+  calls any OpenAI-compatible provider with `fetch` (no SDK). Env: `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`
+  (Groq, `openai/gpt-oss-120b`). On the laptop a small plugin in `vite.config.js` runs it under `npm run dev`.
 - Package manager: npm. Node 26 is installed here.
 
-If it grows: cross-device saving → Supabase (Postgres + Auth). AI feature → one Vercel serverless
-function to hold the key. Real OCR for scanned PDFs → Tesseract.js.
+If it grows: cross-device saving → Supabase (Postgres + Auth). Real OCR for scanned PDFs → Tesseract.js.
 
 ## Commands
 Run from `web/`:
@@ -88,6 +96,8 @@ sdaia-project/
 ├── plain/               # starter's no-build version, reference only
 └── web/                 # the app (Vite + React), deployed to Vercel
     ├── index.html       # <html lang="ar" dir="rtl">
+    ├── .env.example     # the 3 AI variable names; the values go in .env.local (never committed)
+    ├── api/             # ai.js: the only server code (the AI route) + its tests
     └── src/
         ├── main.jsx     # entry point
         ├── App.jsx      # background + app state provider + screen switch
@@ -98,9 +108,9 @@ sdaia-project/
         ├── components/  # Button, Field (Input, Select), Pills, Upload, Cards, Modal, Session, Icon, Doodles
         ├── features/
         │   ├── courses/   # screens 1–3: home, course entry, course list + preferences popup
-        │   ├── estimate/  # estimate.js (5 factors → range + reason) + tests
+        │   ├── estimate/  # estimate.js (5 factors → range + reason), aiEstimate.js (AI + checks) + tests
         │   └── schedule/  # screen 4 + schedule.js (week calendar) + tests
-        ├── lib/         # pdf.js, storage.js, format.js, strings.js, options.js (shared code)
+        ├── lib/         # pdf.js, storage.js, format.js, strings.js, options.js, ai.js (askAI) (shared code)
         └── data/        # mock.json: sample data for tests and the demo
 ```
 The starter's `src/screens/` is replaced by `features/` as each screen is built.
@@ -126,8 +136,11 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
   and the tag to GitHub (`git push origin main` and `git push origin <tag>`).
 
 ## Secrets
-- None are needed today. If any appear: environment variables only, never in code.
-- Never commit `.env` or `.env.local`. Keep `.env.example` with names only. Validate env at startup.
+- `AI_API_KEY` (with `AI_BASE_URL`, `AI_MODEL`): in `web/.env.local` on the laptop and in Vercel's
+  Environment Variables. Only `web/api/ai.js` reads them. Never a `VITE_` name, never in code, never printed.
+- Never commit `.env` or `.env.local`. Keep `.env.example` with names only. The route checks each variable
+  per request and logs only the NAME of a missing one.
+- After `npm run build`, search `dist/` for `AI_API_KEY` and the provider's URL: neither may appear.
 - Keep `.gitignore` thorough (node_modules, dist, .env*) and check it before every push.
 
 ## Input rules
@@ -137,7 +150,9 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
 - Never insert PDF text or user text as HTML (no `dangerouslySetInnerHTML`). Render as plain text.
 - Read and write localStorage defensively: wrap it in try/catch, use a versioned key, and fall back to
   empty data if it's corrupt.
-- If a server is ever added, validate there too.
+- The AI route validates on the server too: prompt 1 to 12000 characters, 10 requests per minute per IP.
+  The browser checks the shape and bounds of every AI answer before using it, and the system message
+  says the user text is data, never instructions (prompt injection).
 
 ## UI rules
 
@@ -155,7 +170,8 @@ Vercel (Hobby plan), project root = `web/`. No self-managed servers.
   Arabic-Indic ١٢٣ in the UI, 0-9 only in code, never zero-pad, decimal «٫», range «١٧–٢٣»;
   no middle dot (U+00B7) next to a number, use «،».
 - Reusable components (button, input, select, card, session, modal...) so later screens reuse them.
-- `web/src/data/mock.json` is only for tests and the «جرّب ببيانات تجريبية» demo. No backend, no real API calls.
+- `web/src/data/mock.json` is only for tests and the «جرّب ببيانات تجريبية» demo, which never calls the AI.
+  The only real API call is the AI estimate through `web/api/ai.js`.
 - One screen per task, including its states from HANDOFF.md §4 with the exact texts from §8.
   Do not touch other screens, routing or tokens unless I ask.
 - Design files live in `design/`: `refs/`, `wireframes.md`, `mockups/`, `shots/`.

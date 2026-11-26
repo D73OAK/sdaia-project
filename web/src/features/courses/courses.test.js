@@ -10,7 +10,9 @@ import {
   draftProblems,
   freeColorIndex,
   hasProblems,
+  keptEstimate,
   makeCourse,
+  needsAI,
   newCourseId,
   nextOrder,
 } from './courses.js';
@@ -61,7 +63,18 @@ describe('makeCourse', () => {
       'lecture 3 c1-ch3',
       'exercises 1 c1-ex1',
     ]);
-    expect(course.chapters.map((c) => c.estimate)).toEqual(fromMock.chapters.map((c) => c.estimate));
+    expect(course.chapters.map((c) => c.estimate)).toEqual(
+      fromMock.chapters.map((c) => ({ ...c.estimate, source: 'formula' })), // no estimate given: the formula
+    );
+  });
+
+  it('uses an estimate it is given (the AI) and never copies the text sample', () => {
+    const ai = { loHours: 4, hiHours: 6, reason: 'counted', source: 'ai', aiReason: 'صعب' };
+    const withSample = { ...read(fromMock.chapters[0]), estimate: ai };
+    withSample.read.sample = 'secret chapter text';
+    const made = makeCourse({ ...course, color: 1, files: { lecture: [withSample], exercises: [] } });
+    expect(made.chapters[0].estimate).toEqual(ai);
+    expect(JSON.stringify(made)).not.toContain('secret chapter text');
   });
 
   it('trims the name and keeps the colour it is given', () => {
@@ -94,7 +107,25 @@ describe('makeCourse', () => {
     expect(edited.chapters[0]).toMatchObject({ adjusted: true, estimate: { loHours: 6, hiHours: 7 } });
     expect(edited.chapters[0].estimate.reason).toContain('قوي'); // the reason follows the new level
     expect(edited.chapters[1].adjusted).toBeUndefined();
-    expect(edited.chapters[1].estimate).toEqual(estimateChapter(ch2.metrics, 'strong'));
+    expect(edited.chapters[1].estimate).toEqual({ ...estimateChapter(ch2.metrics, 'strong'), source: 'formula' });
+  });
+});
+
+describe('which files the AI estimates (§7 rule 5)', () => {
+  const saved = { id: 'c1-ch1', estimate: { loHours: 3, hiHours: 4, source: 'ai', aiReason: 'x' } };
+  it('asks about new files, and saved files only when the level changed', () => {
+    expect(needsAI({ read: {}, adjusted: null }, 'mid', undefined)).toBe(true);
+    expect(needsAI({ saved, adjusted: null }, 'mid', 'mid')).toBe(false);
+    expect(needsAI({ saved, adjusted: null }, 'weak', 'mid')).toBe(true);
+  });
+  it('never asks about a file adjusted by hand, so its hours stay', () => {
+    expect(needsAI({ read: {}, adjusted: { loHours: 1, hiHours: 2 } }, 'mid', undefined)).toBe(false);
+    expect(needsAI({ saved, adjusted: { loHours: 1, hiHours: 2 } }, 'weak', 'mid')).toBe(false);
+  });
+  it('a saved file keeps its estimate while the level stays the same', () => {
+    expect(keptEstimate({ saved, adjusted: null }, 'mid', 'mid')).toBe(saved.estimate);
+    expect(keptEstimate({ saved, adjusted: null }, 'weak', 'mid')).toBeUndefined();
+    expect(keptEstimate({ read: {}, adjusted: null }, 'mid', 'mid')).toBeUndefined();
   });
 });
 

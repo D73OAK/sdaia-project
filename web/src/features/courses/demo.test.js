@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import mock from '../../data/mock.json';
+import { reducer } from '../../state.jsx';
+import { emptyData } from '../../lib/storage.js';
 import { demoCourses } from './demo.js';
 
 describe('demoCourses', () => {
@@ -18,5 +20,16 @@ describe('demoCourses', () => {
     const courses = demoCourses(mock.today);
     courses[0].chapters[0].fileName = 'changed.pdf';
     expect(mock.courses[0].chapters[0].fileName).toBe('chapter1.pdf');
+  });
+});
+
+describe('the demo never calls the AI (§7 rule 5)', () => {
+  it('loads the sample courses with formula estimates and no network call', () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const state = reducer(emptyData(), { type: 'loadDemo', courses: demoCourses(mock.today) });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(state.courses.flatMap((c) => c.chapters).some((ch) => ch.estimate.source === 'ai')).toBe(false);
+    vi.unstubAllGlobals();
   });
 });

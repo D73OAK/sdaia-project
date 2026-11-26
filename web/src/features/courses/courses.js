@@ -44,18 +44,30 @@ export function freeColorIndex(courses) {
 export const nextOrder = (courses) => courses.reduce((max, c) => Math.max(max, c.order), 0) + 1;
 
 // ---------- building the course to save ----------
+// ---------- which files the AI estimates (HANDOFF.md §7 rule 5) ----------
+// On save, the AI is asked about every file that is not adjusted by hand and is either new, or saved
+// before with another level. A saved file keeps its estimate while the level stays the same, so saving
+// a course with no new file and the same level makes no AI call at all.
+export const needsAI = (item, level, savedLevel) => !item.adjusted && (!item.saved || level !== savedLevel);
+
+// The estimate a file keeps without asking: a saved, unadjusted file with the same level keeps its own.
+export const keptEstimate = (item, level, savedLevel) =>
+  item.saved && !item.adjusted && level === savedLevel ? item.saved.estimate : undefined;
+
+// ---------- building the course to save ----------
 // files = { lecture: [item], exercises: [item] } in screen order, all without errors. An item is a file
 // read now ({ read }) or a file saved before ({ saved }: its chapter), plus `adjusted`: { loHours, hiHours }
-// when the student moved its range with − / + (HANDOFF.md §7 rule 19), else null.
+// when the student moved its range with − / + (HANDOFF.md §7 rule 19), else null, plus `estimate` when it
+// is already known (from the AI, or kept from before); without one, the formula estimates it.
 // Chapters and exercise files are numbered separately in screen order. A saved file keeps its id, so its
-// studied/finished records stay. An adjusted file keeps its hours when the level changes; the others are
-// estimated again with the course level.
+// studied/finished records stay. An adjusted file keeps its hours when the level changes.
+// Only the fields below are copied: the text sample of a file never gets into the saved course.
 export function makeCourse({ id, name, level, examDate, order, color, files }) {
   const used = new Set(['lecture', 'exercises'].flatMap((k) => files[k].map((f) => f.saved?.id).filter(Boolean)));
   const chapters = ['lecture', 'exercises'].flatMap((kind) =>
     files[kind].map((item, i) => {
       const source = item.saved ?? item.read;
-      const base = estimateChapter(source.metrics, level);
+      const base = item.estimate ?? { ...estimateChapter(source.metrics, level), source: 'formula' };
       const chapter = {
         id: item.saved?.id ?? newChapterId(id, kind, used),
         fileName: source.fileName,

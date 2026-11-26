@@ -20,15 +20,28 @@
   flex-wrap: wrap;
   gap: var(--space-1);
 }
-/* The course total under the two zones (HANDOFF.md §7 rule 19). */
+/* The course total under the two zones (HANDOFF.md §7 rule 19), and the two small AI lines (§8):
+   the privacy line under the zones, «الرقم مبدئي» under the total. */
+.course-entry__sum,
+.course-entry__note {
+  margin-inline-start: calc(var(--label-width) + var(--space-2));
+}
 .course-entry__total {
   margin-block: var(--space-1) 0;
-  margin-inline-start: calc(var(--label-width) + var(--space-2));
   font-family: var(--font-display);
   font-weight: var(--weight-bold);
 }
+.course-entry__note {
+  margin-block: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+.course-entry__sum .course-entry__note {
+  margin-inline-start: 0;
+}
 @media (max-width: 600px) {
-  .course-entry__total {
+  .course-entry__sum,
+  .course-entry__note {
     margin-inline-start: 0;
   }
 }

@@ -14,6 +14,7 @@ import { fmtDayMonth, fmtHours, fmtNumber, fmtRange } from '../../lib/format.js'
 import { localToday } from '../../lib/options.js';
 import {
   ADJUST,
+  AI_TEXT,
   ALL_PASSED,
   APP_NAME,
   BADGE,
@@ -292,6 +293,9 @@ export default function ScheduleScreen() {
               <p>{TOOLTIP.counts(fmtNumber(p.chapter.metrics.equations), fmtNumber(p.chapter.metrics.exercises))}</p>
               <p>{TOOLTIP.level(p.course.level)}</p>
               {p.chapter.adjusted && <p>{ADJUST.tooltipLine}</p>}
+              {!p.chapter.adjusted && p.chapter.estimate.source === 'ai' && p.chapter.estimate.aiReason && (
+                <p>{AI_TEXT.tooltipLine(p.chapter.estimate.aiReason)}</p>
+              )}
             </div>
           ))}
         </Tooltip>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import mock from '../data/mock.json';
-import { STORAGE_KEY, clearData, emptyData, loadData, saveData } from './storage.js';
+import { STORAGE_KEY, cleanData, clearData, emptyData, loadData, saveData } from './storage.js';
 
 // A stand-in for the browser's localStorage (Node has none).
 function fakeStore(initial = {}) {
@@ -115,5 +115,22 @@ describe('clearData («ابدأ من جديد»)', () => {
   });
   it('returns false instead of crashing when the browser refuses', () => {
     expect(clearData(brokenStore)).toBe(false);
+  });
+});
+
+describe('the AI estimate fields (§7 rule 5)', () => {
+  it('keeps where an estimate came from and the AI reason, and drops any text sample', () => {
+    const chapter = {
+      id: 'c1-ch1',
+      fileName: 'a.pdf',
+      kind: 'lecture',
+      index: 1,
+      sample: 'chapter text',
+      metrics: { pages: 10, density: 'mid', equations: 0, exercises: 0 },
+      estimate: { loHours: 2, hiHours: 3, reason: 'r', source: 'ai', aiReason: 'صعب', sample: 'chapter text' },
+    };
+    const clean = cleanData({ courses: [{ id: 'c1', name: 'x', chapters: [chapter] }] });
+    expect(clean.courses[0].chapters[0].estimate).toEqual({ loHours: 2, hiHours: 3, reason: 'r', source: 'ai', aiReason: 'صعب' });
+    expect(JSON.stringify(clean)).not.toContain('chapter text');
   });
 });
